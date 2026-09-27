@@ -436,7 +436,7 @@
 
   function clean(kind, source) {
     var d = JSON.parse(JSON.stringify(source || state[kind]));
-    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; if (l.ink) o.ink = l.ink; return o; });
+    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; ["ink", "cy", "el", "er"].forEach(function (k) { if (l[k] != null) o[k] = l[k]; }); return o; });
     if (kind === "videos") d.videos = d.videos.map(function (v) {
       var o = { video: v.video, title: v.title || "", meta: v.meta || "" };
       if (v.link) { o.link = v.link; if (v.linkText) o.linkText = v.linkText; }
@@ -697,7 +697,7 @@
     previewTimer = setTimeout(function () {
       if (!frameReady || tab === "install" || !state[tab]) return;
       var data = JSON.parse(JSON.stringify(state[tab]));
-      if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, ink: l.ink, src: l.preview || resolveSrc(l.src) }; });
+      if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, ink: l.ink, cy: l.cy, el: l.el, er: l.er, src: l.preview || resolveSrc(l.src) }; });
       if (tab === "videos") data.videos = data.videos.map(function (v) {
         var o = Object.assign({}, v);
         delete o.pending; delete o.preview;
@@ -1070,11 +1070,27 @@
     out.getContext("2d").drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
     return out;
   }
-  // how much of the logo's box is solid "ink" — used by the banner's auto-size
-  function inkDensity(c) {
-    var d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data, solid = 0;
-    for (var i = 3; i < d.length; i += 4) if (d[i] > 128) solid++;
-    return Math.round((solid / (c.width * c.height)) * 100) / 100 || 0.01;
+  /* Visual-weight measurements, saved with each logo so the banner can align and space
+     logos by how heavy they look rather than by their boxes:
+       ink    how bold it is (share of the box that's solid)
+       cy     where its weight sits vertically (0 = top, 1 = bottom)
+       el/er  how heavy its left/right edges are compared with the whole logo */
+  function measureWeight(c) {
+    var w = c.width, h = c.height, d = c.getContext("2d").getImageData(0, 0, w, h).data;
+    var strip = Math.max(1, Math.round(w * 0.12)), mass = 0, my = 0, solid = 0, left = 0, right = 0;
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      var a = d[(y * w + x) * 4 + 3];
+      if (a > 12) { mass += a; my += a * (y + 0.5); }
+      if (a > 128) { solid++; if (x < strip) left++; if (x >= w - strip) right++; }
+    }
+    var ink = solid / (w * h) || 0.01;
+    var r2 = function (v) { return Math.round(v * 100) / 100; };
+    return {
+      ink: r2(ink) || 0.01,
+      cy: mass ? Math.round(my / mass / h * 1000) / 1000 : 0.5,
+      el: r2(left / (strip * h) / ink),
+      er: r2(right / (strip * h) / ink)
+    };
   }
   /* source: { src, isSvg, svgText? }  mode: "all" | "outside" | "keep" */
   function processLogo(source, mode) {
@@ -1084,18 +1100,19 @@
       var info = analyseEdges(c);
       // already-transparent vector logos are kept as SVG — sharpest possible
       if (info.kind === "clear" && source.svgText) {
-        return { dataUrl: "data:image/svg+xml;base64," + b64encodeText(source.svgText), ext: "svg", bg: "clear", ink: inkDensity(trim(c)) };
+        return { dataUrl: "data:image/svg+xml;base64," + b64encodeText(source.svgText), ext: "svg", bg: "clear", weight: measureWeight(trim(c)) };
       }
       var used = mode;
       if (info.kind === "solid" && mode !== "keep") used = removeBackground(c, info.color, mode);
       var out = trim(c);
-      return { dataUrl: out.toDataURL("image/png"), ext: "png", bg: info.kind, ink: inkDensity(out), mode: used };
+      return { dataUrl: out.toDataURL("image/png"), ext: "png", bg: info.kind, weight: measureWeight(out), mode: used };
     });
   }
   function logoPath(name, ext) { return "logos/" + slug(name) + "-" + Date.now().toString(36).slice(-5) + "." + ext; }
   function importLogo(name, source) {
     return processLogo(source, "auto").then(function (r) {
-      return { name: name, src: logoPath(name, r.ext), preview: r.dataUrl, pending: r.dataUrl.split(",")[1], ink: r.ink, _orig: source, _bg: r.bg, _mode: r.mode || "all" };
+      return Object.assign({ name: name, src: logoPath(name, r.ext), preview: r.dataUrl, pending: r.dataUrl.split(",")[1] }, r.weight,
+                           { _orig: source, _bg: r.bg, _mode: r.mode || "all" });
     });
   }
   function addLogoItems(items) {
@@ -1116,7 +1133,7 @@
         imgBox.classList.add("working");
         processLogo(l._orig, mode).then(function (r) {
           l._mode = mode;
-          l.ink = r.ink;
+          Object.assign(l, r.weight);
           l.preview = r.dataUrl;
           l.pending = r.dataUrl.split(",")[1];
           l.src = logoPath(l.name || "logo", r.ext);
@@ -1165,7 +1182,8 @@
         ids.forEach(function (id) {
           var ent = e.entities && e.entities[id];
           if (!ent || !ent.claims) return;
-          var label = (ent.labels && ent.labels.en && ent.labels.en.value) || q;
+          var label = ((ent.labels && ent.labels.en && ent.labels.en.value) || q)
+            .replace(/,?\s+(inc|llc|ltd|limited|corp|corporation|co|company|plc|gmbh|s\.?a|ag|n\.?v)\.?$/i, "").trim();
           ["P154", "P8972"].forEach(function (prop) {
             (ent.claims[prop] || []).forEach(function (cl) {
               var f = cl.mainsnak && cl.mainsnak.datavalue && cl.mainsnak.datavalue.value;

@@ -21,7 +21,7 @@
     ".ssl-root.ssl-no-fade .ssl-viewport{-webkit-mask-image:none;mask-image:none}",
     ".ssl-track{display:flex;align-items:center;width:max-content;will-change:transform}",
     ".ssl-set{display:flex;align-items:center;flex-shrink:0}",
-    ".ssl-root .ssl-item{display:flex;align-items:center;justify-content:center;align-self:center;line-height:0;padding:0 calc(var(--ssl-gap) / 2);flex-shrink:0;text-decoration:none!important;border:0}",
+    ".ssl-root .ssl-item{display:flex;align-items:center;justify-content:center;align-self:center;line-height:0;padding:0 calc(var(--ssl-gap) / 2 * var(--ssl-pr,1)) 0 calc(var(--ssl-gap) / 2 * var(--ssl-pl,1));flex-shrink:0;text-decoration:none!important;border:0}",
     ".ssl-root .ssl-item img{display:block;height:var(--ssl-h,var(--ssl-height));width:auto;max-width:var(--ssl-max-width);margin:0;object-fit:contain;transform:translateY(calc(var(--ssl-h,var(--ssl-height)) * var(--ssl-dy,0)));filter:grayscale(var(--ssl-gray)) contrast(1.05);opacity:var(--ssl-opacity);transition:filter .5s ease,opacity .5s ease;-webkit-user-drag:none;user-select:none}",
     ".ssl-root.ssl-mono .ssl-item img{filter:grayscale(1) brightness(0)}",
     ".ssl-root.ssl-mono.ssl-dark .ssl-item img{filter:grayscale(1) brightness(0) invert(1)}",
@@ -147,7 +147,11 @@
       img.alt = logo.name || "";
       img.decoding = "async";
       img.draggable = false;
+      // weight measurements saved by the app when the logo was added (see measureWeight in index.html)
       if (logo.ink) img.setAttribute("data-ink", logo.ink);
+      if (logo.cy != null) img.setAttribute("data-cy", logo.cy);
+      if (logo.el != null) img.setAttribute("data-el", logo.el);
+      if (logo.er != null) img.setAttribute("data-er", logo.er);
       item.appendChild(img);
       original.appendChild(item);
     });
@@ -176,6 +180,14 @@
         if (isNaN(cy)) return;
         var shift = Math.max(-0.18, Math.min(0.18, (0.5 - cy) * 0.85)); // fraction of the logo's height
         img.style.setProperty("--ssl-dy", shift.toFixed(3));
+        // optical spacing: a light, airy edge reads as extra space, so tighten the gap on that side
+        var item = img.parentNode;
+        ["el", "er"].forEach(function (side) {
+          var e = parseFloat(img.getAttribute("data-" + side));
+          if (isNaN(e)) return;
+          var f = Math.max(0.65, Math.min(1, 0.65 + 0.35 * e));
+          item.style.setProperty(side === "el" ? "--ssl-pl" : "--ssl-pr", f.toFixed(2));
+        });
       });
     }
     /* Trim: many logo files have empty space baked in around the artwork, which makes them
@@ -212,16 +224,21 @@
         var tw = x1 - x0 + 1, th = y1 - y0 + 1;
 
         // measure the artwork: how bold it is, and where its weight sits vertically
-        var mass = 0, my = 0, solid = 0;
+        var strip = Math.max(1, Math.round(tw * 0.12));
+        var mass = 0, my = 0, solid = 0, left = 0, right = 0;
         for (var yy = y0; yy <= y1; yy++) for (var xx = x0; xx <= x1; xx++) {
           var a = d[(yy * cw + xx) * 4 + 3];
           if (a > 12) { mass += a; my += a * (yy - y0 + 0.5); }
-          if (a > 128) solid++;
+          if (a > 128) { solid++; if (xx < x0 + strip) left++; if (xx > x1 - strip) right++; }
         }
         var transparentBg = tw * th < cw * ch * 0.995 || solid < tw * th * 0.98;
         if (mass && transparentBg) {
-          img.setAttribute("data-cy", (my / mass / th).toFixed(3));
-          img.setAttribute("data-ink", (Math.round(solid / (tw * th) * 100) / 100 || 0.01));
+          var ink = solid / (tw * th) || 0.01;
+          function fill(name, v) { if (!img.hasAttribute(name)) img.setAttribute(name, v); }
+          fill("data-cy", (my / mass / th).toFixed(3));
+          fill("data-ink", Math.round(ink * 100) / 100 || 0.01);
+          fill("data-el", (left / (strip * th) / ink).toFixed(2));
+          fill("data-er", (right / (strip * th) / ink).toFixed(2));
         }
 
         if (tw * th > cw * ch * 0.97) return Promise.resolve(); // already tight
