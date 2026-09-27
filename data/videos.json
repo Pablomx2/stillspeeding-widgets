@@ -2,7 +2,7 @@
   "settings": {
     "theme": "light",
     "perViewDesktop": 3,
-    "softThumbnails": true,
+    "softThumbnails": false,
     "openLinksInNewTab": true,
     "edgeToEdge": true,
     "loop": true,
