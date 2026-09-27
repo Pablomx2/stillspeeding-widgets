@@ -4,9 +4,9 @@
     "theme": "light",
     "style": "grey",
     "greyscale": 100,
-    "opacity": 0.55,
+    "opacity": 0.35,
     "colorOnHover": true,
-    "speed": 32,
+    "speed": 76,
     "direction": "left",
     "logoHeight": 40,
     "logoMaxWidth": 140,
@@ -28,20 +28,20 @@
       "er": 1.3
     },
     {
-      "name": "Toyota",
-      "src": "logos/toyota-f1zvu.png",
-      "ink": 0.29,
-      "cy": 0.479,
-      "el": 0.92,
-      "er": 0.97
-    },
-    {
       "name": "Ram",
       "src": "logos/ram-f24zp.svg",
       "ink": 0.25,
       "cy": 0.572,
       "el": 0.43,
       "er": 0.42
+    },
+    {
+      "name": "Toyota",
+      "src": "logos/toyota-f1zvu.png",
+      "ink": 0.29,
+      "cy": 0.479,
+      "el": 0.92,
+      "er": 0.97
     },
     {
       "name": "Audible",
