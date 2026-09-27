@@ -1,0 +1,58 @@
+name: Media helper
+
+# The admin app drops small request files into requests/ to get an Instagram picture
+# or a copy of a video (for the frame picker). See scripts/media-helper.mjs.
+on:
+  push:
+    branches: [main]
+    paths: ["requests/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: media-helper
+  cancel-in-progress: false
+
+jobs:
+  media:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install yt-dlp
+        run: python3 -m pip install --quiet --upgrade yt-dlp
+      - name: Load recent results
+        run: |
+          if git ls-remote --exit-code --heads origin media-cache >/dev/null; then
+            git clone --quiet --depth 1 --branch media-cache "$REPO_URL" out-old
+          fi
+      - name: Handle requests
+        run: node scripts/media-helper.mjs
+      - name: Save covers and clear requests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A requests 2>/dev/null || true
+          git add -A covers 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -qm "Media helper: handle requests"
+            git pull -q --rebase origin main
+            git push -q
+            gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || true
+          fi
+      - name: Publish results to the media-cache branch
+        run: |
+          cd out
+          git init -q
+          git checkout -q -b media-cache
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "Media cache" --allow-empty
+          git push -q -f "$REPO_URL" media-cache
