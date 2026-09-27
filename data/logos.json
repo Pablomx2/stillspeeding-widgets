@@ -28,6 +28,30 @@
       "er": 1.3
     },
     {
+      "name": "Audible",
+      "src": "logos/audible-f2nbv.svg",
+      "ink": 0.22,
+      "cy": 0.513,
+      "el": 1.03,
+      "er": 0.63
+    },
+    {
+      "name": "Meta Platforms",
+      "src": "logos/meta-platforms-f35ld.svg",
+      "ink": 0.39,
+      "cy": 0.534,
+      "el": 1.2,
+      "er": 1.09
+    },
+    {
+      "name": "American Express",
+      "src": "logos/american-express-f7emf.png",
+      "ink": 1,
+      "cy": 0.5,
+      "el": 1,
+      "er": 0.98
+    },
+    {
       "name": "Ram",
       "src": "logos/ram-f24zp.svg",
       "ink": 0.25,
@@ -44,28 +68,12 @@
       "er": 0.97
     },
     {
-      "name": "Audible",
-      "src": "logos/audible-f2nbv.svg",
-      "ink": 0.22,
-      "cy": 0.513,
-      "el": 1.03,
-      "er": 0.63
-    },
-    {
       "name": "Billboard",
       "src": "logos/billboard-f2yfj.svg",
       "ink": 0.6,
       "cy": 0.585,
       "el": 1.13,
       "er": 1.13
-    },
-    {
-      "name": "Meta Platforms",
-      "src": "logos/meta-platforms-f35ld.svg",
-      "ink": 0.39,
-      "cy": 0.534,
-      "el": 1.2,
-      "er": 1.09
     },
     {
       "name": "Whatsapp",
@@ -106,14 +114,6 @@
       "cy": 0.56,
       "el": 1.24,
       "er": 1.14
-    },
-    {
-      "name": "American Express",
-      "src": "logos/american-express-f7emf.png",
-      "ink": 1,
-      "cy": 0.5,
-      "el": 1,
-      "er": 0.98
     },
     {
       "name": "Waymo",
