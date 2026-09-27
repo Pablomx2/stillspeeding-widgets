@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "theme": "light",
+    "perViewDesktop": 3,
+    "softThumbnails": false,
+    "openLinksInNewTab": true
+  },
+  "videos": [
+    { "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U", "title": "ADÉLA — Nicole Kidman", "meta": "Music video" },
+    { "video": "https://www.youtube.com/watch?v=-gm2ncZDJPU", "title": "WWE 2K25: Netflix Edition", "meta": "Game trailer · Netflix" },
+    { "video": "https://www.youtube.com/watch?v=p4bqpSJwguw", "title": "My Current Rotation", "meta": "REVOLVE" },
+    { "video": "https://www.youtube.com/watch?v=gE-rcACBTZU", "title": "Calle 24, Fuerza Regida — Noche Perfecta", "meta": "Music video" },
+    { "video": "https://www.youtube.com/watch?v=I-rOF9se14w", "title": "LISA — When I'm With You", "meta": "Behind the scenes" },
+    { "video": "https://www.youtube.com/watch?v=siL-RoC8haQ", "title": "LISA — FUTW (Vixi Solo Version)", "meta": "Behind the scenes" },
+    { "video": "https://www.youtube.com/watch?v=NLDida6fglw", "title": "Project Hail Mary", "meta": "Theater tour · Amazon MGM Studios" }
+  ]
+}

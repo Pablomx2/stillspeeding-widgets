@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Widget preview</title>
+<style>
+  html, body { margin: 0; }
+  body { padding: 32px 28px 36px; font-family: "Space Grotesk", system-ui, sans-serif; transition: background .3s ease; }
+  body[data-bg="grey"]  { background: #dcdcdc; }
+  body[data-bg="white"] { background: #fff; }
+  body[data-bg="black"] { background: #000; }
+  @media (max-width: 640px) { body { padding: 24px 16px 28px; } }
+</style>
+<script src="embed/videos.js" data-no-boot></script>
+<script src="embed/logos.js" data-no-boot></script>
+</head>
+<body data-bg="grey">
+<div id="widget"></div>
+<script>
+  var target = document.getElementById("widget");
+  function sendHeight() {
+    parent.postMessage({ type: "ssw-height", height: Math.ceil(document.body.getBoundingClientRect().height) }, location.origin);
+  }
+  window.addEventListener("message", function (e) {
+    if (e.origin !== location.origin || !e.data || e.data.type !== "ssw-render") return;
+    document.body.dataset.bg = e.data.bg || "grey";
+    if (e.data.kind === "videos") SSWidgets.renderVideos(target, e.data.data);
+    else SSWidgets.renderLogos(target, e.data.data);
+    sendHeight();
+  });
+  if (window.ResizeObserver) new ResizeObserver(sendHeight).observe(document.body);
+  parent.postMessage({ type: "ssw-ready" }, location.origin);
+</script>
+</body>
+</html>

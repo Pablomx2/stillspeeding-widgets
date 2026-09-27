@@ -1,0 +1,21 @@
+{
+  "settings": {
+    "heading": "Clients",
+    "theme": "light",
+    "style": "grey",
+    "greyscale": 100,
+    "opacity": 0.55,
+    "colorOnHover": true,
+    "speed": 32,
+    "direction": "left",
+    "logoHeight": 40,
+    "logoMaxWidth": 140,
+    "gap": 80,
+    "pauseOnHover": true,
+    "fadeEdges": true
+  },
+  "logos": [
+    { "name": "Netflix", "src": "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" },
+    { "name": "Amazon", "src": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" }
+  ]
+}

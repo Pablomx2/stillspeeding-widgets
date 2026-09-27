@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<title>Still Speeding · Widgets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dangrek&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #000; --paper: #fafafa; --grey: #dcdcdc; --card: #fff;
+    --line: rgba(0,0,0,.12); --line-strong: rgba(0,0,0,.28); --muted: rgba(0,0,0,.55);
+    --danger: #b3261e; --ok: #1f7a3d;
+    --head: "Dangrek", "Arial Narrow", sans-serif;
+    --body: "Space Grotesk", system-ui, sans-serif;
+    --r-lg: 28px; --r-md: 18px; --r-sm: 12px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--grey); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.45; -webkit-tap-highlight-color: transparent; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+
+  /* ---------- top bar ---------- */
+  .top { position: sticky; top: 0; z-index: 20; background: #000; color: var(--paper); }
+  .top-in { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 12px 20px; padding-top: max(12px, env(safe-area-inset-top)); }
+  .badge { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--paper); color: #000; display: grid; place-items: center; font-family: var(--head); font-size: 16px; padding-top: 2px; }
+  .brand { font-family: var(--head); font-size: 20px; line-height: 1; text-transform: uppercase; letter-spacing: .01em; }
+  .brand small { display: block; margin-top: 4px; font-family: var(--body); font-size: 12px; font-weight: 500; opacity: .55; text-transform: none; letter-spacing: 0; }
+  .spacer { flex: 1; }
+  .status { font-size: 13px; opacity: .7; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+  .status i { width: 8px; height: 8px; border-radius: 50%; background: #666; display: inline-block; }
+  .status.dirty i { background: #f5c542; }
+  .status.saved i { background: #3ecf6e; }
+
+  /* ---------- buttons ---------- */
+  .btn { -webkit-appearance: none; appearance: none; border: 1.5px solid currentColor; background: transparent; height: 42px; padding: 0 20px; border-radius: 300px; font-family: var(--head); font-size: 15px; line-height: 1; text-transform: uppercase; letter-spacing: .03em; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; transition: background .2s, color .2s, opacity .2s, transform .15s; }
+  .btn span { transform: translateY(1px); }
+  .btn:active:not(:disabled) { transform: scale(.97); }
+  .btn:disabled { opacity: .35; cursor: default; }
+  .btn-solid { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .top .btn-solid { background: var(--paper); color: #000; border-color: var(--paper); }
+  .btn-sm { height: 34px; padding: 0 14px; font-size: 13px; }
+  .btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .link-btn { -webkit-appearance: none; appearance: none; border: 0; background: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; color: inherit; font-size: 13px; }
+  .icon-btn { -webkit-appearance: none; appearance: none; width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff; cursor: pointer; display: grid; place-items: center; padding: 0; transition: border-color .2s, background .2s, color .2s; }
+  .icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-btn:hover:not(:disabled) { border-color: var(--ink); }
+  .icon-btn.danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .icon-btn:disabled { opacity: .3; cursor: default; }
+
+  /* ---------- tabs ---------- */
+  .tabs { max-width: 1400px; margin: 0 auto; padding: 18px 20px 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { -webkit-appearance: none; appearance: none; border: 1.5px solid var(--ink); background: transparent; height: 40px; padding: 0 20px; border-radius: 300px; font-family: var(--head); font-size: 15px; text-transform: uppercase; letter-spacing: .03em; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+  .tab span { transform: translateY(1px); }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+  .tab .count { font-family: var(--body); font-size: 12px; font-weight: 600; opacity: .6; }
+
+  /* ---------- layout ---------- */
+  main { max-width: 1400px; margin: 0 auto; padding: 16px 20px 100px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 20px; align-items: start; }
+  main.full { grid-template-columns: minmax(0, 1fr); max-width: 900px; }
+  .panel { background: var(--paper); border-radius: var(--r-lg); padding: 24px; }
+  .stack { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
+  h2 { font-family: var(--head); font-weight: 400; font-size: 24px; line-height: 1.1; text-transform: uppercase; margin: 0; }
+  h3 { font-family: var(--head); font-weight: 400; font-size: 17px; text-transform: uppercase; margin: 0 0 12px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+
+  .banner { max-width: 1400px; margin: 16px auto 0; padding: 0 20px; }
+  .banner-in { background: #000; color: var(--paper); border-radius: var(--r-md); padding: 14px 18px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 14px; }
+  .banner-in p { margin: 0; flex: 1; min-width: 200px; }
+  .banner-in .btn { border-color: var(--paper); }
+
+  /* ---------- form fields ---------- */
+  .field { display: grid; gap: 5px; }
+  .field > span { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .input { width: 100%; height: 42px; border: 1.5px solid var(--line); border-radius: var(--r-sm); padding: 0 12px; background: #fff; font-size: 15px; transition: border-color .2s; }
+  .input:focus { outline: none; border-color: var(--ink); }
+  .input.title { font-weight: 600; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .add-bar { display: flex; gap: 10px; }
+  .add-bar .input { flex: 1; height: 48px; border-radius: 300px; padding: 0 20px; }
+  .add-bar .btn { height: 48px; }
+
+  .seg { display: inline-flex; border: 1.5px solid var(--ink); border-radius: 300px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+  .seg button { -webkit-appearance: none; appearance: none; border: 0; background: transparent; height: 32px; padding: 0 14px; border-radius: 300px; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  .settings { display: grid; gap: 18px; }
+  .set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .set-row > label, .set-row > .lbl { font-weight: 600; font-size: 14px; }
+  .set-row .sub { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+  .range { display: flex; align-items: center; gap: 12px; min-width: 220px; flex: 1; max-width: 320px; }
+  .range input { flex: 1; accent-color: #000; }
+  .range output { width: 44px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .switch { position: relative; width: 48px; height: 28px; flex-shrink: 0; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+  .switch i { position: absolute; inset: 0; border-radius: 300px; background: var(--line-strong); transition: background .2s; }
+  .switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .25s cubic-bezier(.2,.7,.2,1); box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .switch input:checked + i { background: #000; }
+  .switch input:checked + i::after { transform: translateX(20px); }
+  .switch input:focus-visible + i { outline: 2px solid #000; outline-offset: 2px; }
+  details.more { border-top: 1.5px solid var(--line); padding-top: 16px; }
+  details.more summary { cursor: pointer; font-family: var(--head); text-transform: uppercase; font-size: 16px; list-style: none; display: flex; align-items: center; justify-content: space-between; }
+  details.more summary::-webkit-details-marker { display: none; }
+  details.more summary::after { content: "+"; font-family: var(--body); font-size: 22px; line-height: 1; }
+  details.more[open] summary::after { content: "–"; }
+  details.more[open] summary { margin-bottom: 16px; }
+
+  /* ---------- list items ---------- */
+  .list { display: grid; gap: 12px; }
+  .empty { border: 1.5px dashed var(--line-strong); border-radius: var(--r-md); padding: 34px 20px; text-align: center; color: var(--muted); font-size: 14px; }
+  .item { position: relative; display: grid; grid-template-columns: 22px 132px minmax(0, 1fr) auto; gap: 14px; align-items: start; background: var(--card); border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 14px; transition: border-color .2s, box-shadow .2s, opacity .2s; }
+  .item.dragging { opacity: .4; }
+  .item.drop-before { box-shadow: 0 -3px 0 #000; }
+  .item.drop-after { box-shadow: 0 3px 0 #000; }
+  .item.flash { animation: flash 1.2s ease; }
+  @keyframes flash { 0% { border-color: #000; box-shadow: 0 0 0 4px rgba(0,0,0,.12); } 100% { border-color: var(--line); box-shadow: none; } }
+  .handle { align-self: center; cursor: grab; color: var(--muted); display: grid; place-items: center; height: 100%; touch-action: none; }
+  .handle svg { width: 14px; height: 22px; fill: currentColor; }
+  .thumb { width: 132px; aspect-ratio: 16 / 9; border-radius: 10px; background: #111 center / cover no-repeat; position: relative; overflow: hidden; }
+  .thumb .kind { position: absolute; left: 6px; bottom: 6px; background: rgba(255,255,255,.92); color: #000; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 300px; }
+  .fields { display: grid; gap: 8px; min-width: 0; }
+  .fields .input { height: 38px; font-size: 14px; }
+  .fields .input.title { height: 40px; font-size: 15px; }
+  .src-line { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .src-line a { color: inherit; }
+  .actions { display: grid; gap: 6px; }
+
+  .logo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .logo-card { position: relative; background: var(--card); border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 12px; display: grid; gap: 8px; transition: opacity .2s, box-shadow .2s; }
+  .logo-card.dragging { opacity: .4; }
+  .logo-card.drop-before { box-shadow: -3px 0 0 #000; }
+  .logo-card.drop-after { box-shadow: 3px 0 0 #000; }
+  .logo-card.flash { animation: flash 1.2s ease; }
+  .logo-img { height: 86px; border-radius: 10px; background: #f1f1f1; display: grid; place-items: center; padding: 14px; cursor: grab; position: relative; }
+  .logo-img img { max-height: 52px; max-width: 100%; object-fit: contain; }
+  .logo-img .new { position: absolute; top: 8px; left: 8px; background: #000; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 300px; }
+  .logo-card .input { height: 36px; font-size: 14px; }
+  .logo-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+  .drop { border: 1.5px dashed var(--line-strong); border-radius: var(--r-md); padding: 26px 20px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; display: grid; gap: 6px; justify-items: center; }
+  .drop:hover, .drop.over { border-color: #000; background: rgba(0,0,0,.03); }
+  .drop strong { font-family: var(--head); font-weight: 400; font-size: 17px; text-transform: uppercase; }
+  .drop span { font-size: 13px; color: var(--muted); }
+  .drop svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- preview ---------- */
+  .preview-panel { position: sticky; top: 84px; padding: 18px; }
+  .preview-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .preview-bar h2 { font-size: 18px; }
+  .preview-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+  .frame-wrap { position: relative; border-radius: 20px; overflow: hidden; background: #dcdcdc; transition: background .3s; height: 300px; }
+  .frame-wrap iframe { position: absolute; top: 0; left: 0; display: block; border: 0; background: transparent; transform-origin: 0 0; }
+  .frame-wrap.phone { background: #cfcfcf !important; }
+  .frame-wrap.phone iframe { border-radius: 30px; box-shadow: 0 0 0 8px #000; }
+
+  /* ---------- install ---------- */
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .steps li { min-width: 0; counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+  .steps li::before { content: counter(s); width: 34px; height: 34px; border-radius: 50%; background: #000; color: #fff; display: grid; place-items: center; font-family: var(--head); font-size: 15px; padding-top: 2px; }
+  .steps b { font-weight: 700; }
+  .code { position: relative; background: #000; color: #eaeaea; border-radius: var(--r-md); padding: 58px 18px 18px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; margin: 10px 0 0; }
+  .code-wrap { position: relative; }
+  .code-wrap .btn { position: absolute; top: 12px; right: 12px; color: #fff; background: #000; }
+  .kbd { display: inline-block; border: 1.5px solid var(--line-strong); border-radius: 6px; padding: 0 6px; font-size: 12px; font-weight: 600; }
+
+  /* ---------- dialog ---------- */
+  dialog { border: 0; border-radius: var(--r-lg); padding: 0; width: min(560px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); background: var(--paper); color: var(--ink); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  dialog::backdrop { background: rgba(0,0,0,.55); backdrop-filter: blur(2px); }
+  .dlg { padding: 26px; display: grid; gap: 16px; }
+  .dlg ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; }
+  .dlg a { color: inherit; font-weight: 600; }
+  .dlg-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .error { color: var(--danger); font-size: 13px; font-weight: 600; }
+
+  /* ---------- toast ---------- */
+  .toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translate(-50%, 30px); opacity: 0; background: #000; color: #fff; padding: 12px 20px; border-radius: 300px; font-size: 14px; font-weight: 500; z-index: 50; pointer-events: none; transition: opacity .25s, transform .3s cubic-bezier(.2,.7,.2,1); max-width: calc(100vw - 32px); text-align: center; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.err { background: var(--danger); }
+
+  .spin { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- mobile ---------- */
+  @media (max-width: 1000px) {
+    main { grid-template-columns: minmax(0, 1fr); }
+    .preview-panel { position: static; }
+  }
+  @media (max-width: 640px) {
+    .top-in { padding: 10px 14px; gap: 10px; }
+    .brand { font-size: 17px; }
+    .brand small, .status span { display: none; }
+    .tabs { padding: 14px 14px 0; }
+    .banner { padding: 0 14px; }
+    main { padding: 12px 14px 90px; gap: 14px; }
+    .panel { padding: 18px; border-radius: 22px; }
+    .item { grid-template-columns: 128px minmax(0, 1fr); gap: 10px; padding: 12px; }
+    .item .handle { display: none; }
+    .item .thumb { width: 128px; grid-row: 1; grid-column: 1; }
+    .item .actions { grid-row: 1; grid-column: 2; display: flex; justify-content: flex-end; align-self: start; gap: 6px; }
+    .item .fields { grid-row: 2; grid-column: 1 / -1; }
+    .row { grid-template-columns: 1fr; }
+    .add-bar { flex-direction: column; }
+    .add-bar .input { flex: none; }
+    .logo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .logo-img { height: 70px; }
+    .range { min-width: 0; max-width: none; width: 100%; }
+  }
+  @media (max-width: 380px) { .logo-grid { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="badge">SS</div>
+    <div class="brand">Widgets<small>Recent work &amp; clients for stillspeeding.net</small></div>
+    <div class="spacer"></div>
+    <div class="status" id="status"><i></i><span id="statusText">Loading…</span></div>
+    <button class="btn btn-solid" id="publishBtn" disabled><span>Publish</span></button>
+  </div>
+</header>
+
+<div class="banner" id="connectBanner" hidden>
+  <div class="banner-in">
+    <p><b>View-only.</b> Connect your GitHub once so the Publish button can update your site.</p>
+    <button class="btn btn-sm" id="connectBtn"><span>Connect GitHub</span></button>
+  </div>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" data-tab="videos" aria-selected="true"><span>Videos</span> <span class="count" id="countVideos"></span></button>
+  <button class="tab" role="tab" data-tab="logos" aria-selected="false"><span>Logos</span> <span class="count" id="countLogos"></span></button>
+  <button class="tab" role="tab" data-tab="install" aria-selected="false"><span>Install</span></button>
+</nav>
+
+<main id="main">
+  <!-- ================= VIDEOS ================= -->
+  <section class="stack" data-view="videos">
+    <div class="panel">
+      <div class="panel-head"><h2>Add a video</h2></div>
+      <form class="add-bar" id="addVideoForm" autocomplete="off">
+        <input class="input" id="addVideoUrl" type="url" inputmode="url" placeholder="Paste a YouTube or Vimeo link…" required>
+        <button class="btn btn-solid" type="submit"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Add</span></button>
+      </form>
+      <p class="hint">The title fills in automatically — you can change it after. New videos go to the front.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Your videos</h2><span class="hint" id="videoHint">Drag or use the arrows</span></div>
+      <div class="list" id="videoList"></div>
+      <details class="more" style="margin-top:20px">
+        <summary>Look &amp; feel</summary>
+        <div class="settings" id="videoSettings"></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= LOGOS ================= -->
+  <section class="stack" data-view="logos" hidden>
+    <div class="panel">
+      <div class="panel-head"><h2>Add logos</h2></div>
+      <label class="drop" id="dropZone">
+        <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        <strong>Drop logo files here</strong>
+        <span>or tap to choose · PNG or SVG with a transparent background looks best</span>
+        <input type="file" id="fileInput" accept="image/png,image/svg+xml,image/jpeg,image/webp" multiple hidden>
+      </label>
+      <form class="add-bar" id="addLogoUrlForm" style="margin-top:12px" autocomplete="off">
+        <input class="input" id="addLogoUrl" type="url" inputmode="url" placeholder="…or paste an image link">
+        <button class="btn" type="submit"><span>Add link</span></button>
+      </form>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Your clients</h2><span class="hint">Drag or use the arrows</span></div>
+      <div class="logo-grid" id="logoList"></div>
+      <details class="more" style="margin-top:20px">
+        <summary>Look &amp; feel</summary>
+        <div class="settings" id="logoSettings"></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= PREVIEW ================= -->
+  <aside class="panel preview-panel" id="previewPanel">
+    <div class="preview-bar">
+      <h2>Live preview</h2>
+      <div class="preview-tools">
+        <div class="seg" id="bgSeg" aria-label="Preview background">
+          <button data-v="grey" aria-pressed="true">Grey</button><button data-v="white" aria-pressed="false">White</button><button data-v="black" aria-pressed="false">Black</button>
+        </div>
+        <div class="seg" id="deviceSeg" aria-label="Preview size">
+          <button data-v="desktop" aria-pressed="true">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button>
+        </div>
+      </div>
+    </div>
+    <div class="frame-wrap" id="frameWrap"><iframe id="frame" src="preview.html" title="Live preview"></iframe></div>
+    <p class="hint" style="margin-top:10px">This is exactly how it will look on your site. Changes go live when you press <b>Publish</b>.</p>
+  </aside>
+
+  <!-- ================= INSTALL ================= -->
+  <section class="stack" data-view="install" hidden>
+    <div class="panel">
+      <h2 style="margin-bottom:6px">Put it on your site</h2>
+      <p class="hint" style="margin-bottom:18px">You only do this once. After that, just edit here and press Publish.</p>
+      <ol class="steps">
+        <li><div>In Squarespace, open the page and click <b>Edit</b>.</div></li>
+        <li><div>Click <b>+ Add Block</b> (or the <span class="kbd">+</span> in a section) and choose <b>Code</b>.</div></li>
+        <li><div>Delete what's in the box, paste the code below, and make sure <b>Display Source</b> is <b>off</b>.</div></li>
+        <li><div>Click outside the block, then <b>Save</b>. Done — it shows up on the live site. (Squarespace's editor sometimes hides scripts while editing; check the live page.)</div></li>
+      </ol>
+    </div>
+    <div class="panel">
+      <h3>Recent work — video carousel</h3>
+      <p class="hint">Replace the YouTube blocks under “Recent Work” with this.</p>
+      <div class="code-wrap"><pre class="code" id="codeVideos"></pre><button class="btn btn-sm" data-copy="codeVideos"><span>Copy</span></button></div>
+    </div>
+    <div class="panel">
+      <h3>Clients — logo banner</h3>
+      <p class="hint">Put this in any section. On a black section, change <code>data-theme="light"</code> to <code>"dark"</code>.</p>
+      <div class="code-wrap"><pre class="code" id="codeLogos"></pre><button class="btn btn-sm" data-copy="codeLogos"><span>Copy</span></button></div>
+    </div>
+    <div class="panel">
+      <h3>GitHub connection</h3>
+      <p class="hint" id="connInfo"></p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn btn-sm" id="connectBtn2"><span>Connect / change</span></button>
+        <button class="btn btn-sm" id="disconnectBtn"><span>Disconnect this device</span></button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="connectDlg">
+  <form method="dialog" class="dlg" id="connectForm">
+    <h2>Connect GitHub</h2>
+    <p class="hint" style="margin:0">This lets the Publish button save your changes. You only need to do it once per device.</p>
+    <ol>
+      <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → New fine-grained token</a> (sign in if asked).</li>
+      <li>Name it <b>Widgets</b>, pick an expiration (1 year is fine).</li>
+      <li>Under <b>Repository access</b> choose <b>Only select repositories</b> → <b id="repoNameLbl">stillspeeding-widgets</b>.</li>
+      <li>Under <b>Permissions → Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
+      <li>Click <b>Generate token</b>, copy it, and paste it below.</li>
+    </ol>
+    <label class="field"><span>Token</span><input class="input" id="tokenInput" type="password" autocomplete="off" placeholder="github_pat_…" required></label>
+    <details>
+      <summary class="hint" style="cursor:pointer">Advanced: repository</summary>
+      <div class="row" style="margin-top:10px">
+        <label class="field"><span>Owner</span><input class="input" id="ownerInput" type="text"></label>
+        <label class="field"><span>Repository</span><input class="input" id="repoInput" type="text"></label>
+      </div>
+    </details>
+    <p class="hint" style="margin:0">The token is stored only in this browser and only works on this one repository.</p>
+    <div class="error" id="connectErr" hidden></div>
+    <div class="dlg-actions">
+      <button class="btn" value="cancel" formnovalidate><span>Cancel</span></button>
+      <button class="btn btn-solid" id="connectSave" value="ok"><span>Connect</span></button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- config ---------------- */
+  var DEFAULT_OWNER = "Pablomx2";
+  var DEFAULT_REPO = "stillspeeding-widgets";
+  var BRANCH = "main";
+  var LS = { token: "ssw-token", owner: "ssw-owner", repo: "ssw-repo", draft: "ssw-draft" };
+
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+
+  // when served from GitHub Pages, work out the repo from the address
+  var host = location.hostname.match(/^([^.]+)\.github\.io$/i);
+  var pathRepo = location.pathname.split("/").filter(Boolean)[0];
+  var cfg = {
+    owner: lsGet(LS.owner) || (host ? host[1] : DEFAULT_OWNER),
+    repo: lsGet(LS.repo) || (host && pathRepo && !/\.html?$/.test(pathRepo) ? pathRepo : DEFAULT_REPO),
+    token: lsGet(LS.token)
+  };
+  function siteBase() { return "https://" + cfg.owner.toLowerCase() + ".github.io/" + cfg.repo + "/"; }
+
+  /* ---------------- state ---------------- */
+  var state = { videos: null, logos: null };
+  var remote = { videos: { sha: null, json: "" }, logos: { sha: null, json: "" } };
+  var tab = "videos";
+  var previewBg = "grey", previewDevice = "desktop";
+
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  function clean(kind) {
+    var d = JSON.parse(JSON.stringify(state[kind]));
+    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; return o; });
+    if (kind === "videos") d.videos = d.videos.map(function (v) {
+      var o = { video: v.video, title: v.title || "", meta: v.meta || "" };
+      if (v.link) { o.link = v.link; if (v.linkText) o.linkText = v.linkText; }
+      if (v.thumbnail) o.thumbnail = v.thumbnail;
+      return o;
+    });
+    return d;
+  }
+  function serialize(kind) { return JSON.stringify(clean(kind), null, 2) + "\n"; }
+  function isDirty(kind) { return state[kind] && serialize(kind) !== remote[kind].json; }
+  function pendingUploads() { return state.logos ? state.logos.logos.filter(function (l) { return l.pending; }) : []; }
+
+  /* ---------------- helpers ---------------- */
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    for (var k in attrs || {}) {
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k === "html") e.innerHTML = attrs[k];
+      else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== undefined && attrs[k] !== null && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { if (c) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return e;
+  }
+  var ICON = {
+    up: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+    down: '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+    left: '<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
+    right: '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
+    x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    grip: '<svg viewBox="0 0 10 16"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg>'
+  };
+  function b64encodeText(str) {
+    var bytes = new TextEncoder().encode(str), bin = "";
+    for (var i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+  function b64decodeText(b64) {
+    var bin = atob(b64.replace(/\s/g, "")), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function slug(s) { return (s || "logo").toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s_]+/g, "-").replace(/-+/g, "-").slice(0, 40) || "logo"; }
+  function prettyName(filename) { return filename.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").replace(/\b(logo|final|copy|white|black|color|colour)\b/gi, "").replace(/\s+/g, " ").trim().replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
+  function move(arr, from, to) { if (to < 0 || to >= arr.length) return; arr.splice(to, 0, arr.splice(from, 1)[0]); }
+  function resolveSrc(src) { return /^(https?:|data:|blob:)/.test(src) ? src : new URL(src, location.href).href; }
+
+  var toastTimer;
+  function toast(msg, isErr) {
+    var t = $("#toast");
+    t.textContent = msg;
+    t.classList.toggle("err", !!isErr);
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, isErr ? 6000 : 3500);
+  }
+
+  /* ---------------- GitHub API ---------------- */
+  function api(path, opts) {
+    opts = opts || {};
+    var headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+    if (cfg.token) headers.Authorization = "Bearer " + cfg.token;
+    if (opts.body) headers["Content-Type"] = "application/json";
+    return fetch("https://api.github.com/repos/" + cfg.owner + "/" + cfg.repo + path, {
+      method: opts.method || "GET", headers: headers, body: opts.body ? JSON.stringify(opts.body) : undefined, cache: "no-store"
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) { var e = new Error(j.message || ("GitHub error " + r.status)); e.status = r.status; throw e; }
+        return j;
+      });
+    });
+  }
+  function contentsPath(p) { return "/contents/" + p.split("/").map(encodeURIComponent).join("/"); }
+  function getFile(p) { return api(contentsPath(p) + "?ref=" + BRANCH); }
+  function putFile(p, base64, message, sha) {
+    var body = { message: message, content: base64, branch: BRANCH };
+    if (sha) body.sha = sha;
+    return api(contentsPath(p), { method: "PUT", body: body }).catch(function (e) {
+      // someone else changed the file since we loaded it — grab the latest version id and retry once
+      if (e.status === 409 || e.status === 422) {
+        return getFile(p).then(function (f) { body.sha = f.sha; return api(contentsPath(p), { method: "PUT", body: body }); },
+                               function () { delete body.sha; return api(contentsPath(p), { method: "PUT", body: body }); });
+      }
+      throw e;
+    });
+  }
+
+  /* ---------------- loading ---------------- */
+  var FALLBACK = {
+    videos: { settings: { theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true }, videos: [] },
+    logos: { settings: { heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55, colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140, gap: 80, pauseOnHover: true, fadeEdges: true }, logos: [] }
+  };
+
+  function loadKind(kind) {
+    var path = "data/" + kind + ".json";
+    var viaApi = cfg.token
+      ? getFile(path).then(function (f) { remote[kind].sha = f.sha; return JSON.parse(b64decodeText(f.content)); })
+      : Promise.reject();
+    return viaApi.catch(function (e) {
+      if (e && e.status === 401) { toast("GitHub didn't accept the saved token — please connect again.", true); }
+      return fetch(path + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { if (!r.ok) throw 0; return r.json(); });
+    }).catch(function () { return JSON.parse(JSON.stringify(FALLBACK[kind])); }).then(function (d) {
+      d.settings = Object.assign({}, FALLBACK[kind].settings, d.settings || {});
+      d[kind] = d[kind] || [];
+      state[kind] = d;
+      remote[kind].json = serialize(kind);
+    });
+  }
+
+  function saveDraft() {
+    var draft = {};
+    ["videos", "logos"].forEach(function (k) { if (isDirty(k) || (k === "logos" && pendingUploads().length)) draft[k] = state[k]; });
+    if (Object.keys(draft).length) {
+      try { localStorage.setItem(LS.draft, JSON.stringify(draft)); }
+      catch (e) { // images too big for storage — keep the rest
+        try { draft.logos = draft.logos && Object.assign({}, draft.logos, { logos: draft.logos.logos.filter(function (l) { return !l.pending; }) }); localStorage.setItem(LS.draft, JSON.stringify(draft)); } catch (e2) {}
+      }
+    } else lsSet(LS.draft, null);
+  }
+  function restoreDraft() {
+    var raw = lsGet(LS.draft);
+    if (!raw) return false;
+    try {
+      var d = JSON.parse(raw), used = false;
+      ["videos", "logos"].forEach(function (k) { if (d[k]) { state[k] = d[k]; used = true; } });
+      return used;
+    } catch (e) { return false; }
+  }
+
+  /* ---------------- status + publish ---------------- */
+  function refreshStatus() {
+    var dirty = isDirty("videos") || isDirty("logos") || pendingUploads().length > 0;
+    var s = $("#status");
+    s.classList.toggle("dirty", dirty);
+    s.classList.toggle("saved", !dirty);
+    $("#statusText").textContent = dirty ? "Unpublished changes" : "Up to date";
+    $("#publishBtn").disabled = !dirty || publishing;
+    $("#countVideos").textContent = state.videos ? state.videos.videos.length : "";
+    $("#countLogos").textContent = state.logos ? state.logos.logos.length : "";
+    $("#connectBanner").hidden = !!cfg.token;
+    saveDraft();
+  }
+
+  var publishing = false;
+  function publish() {
+    if (!cfg.token) { openConnect(); return; }
+    publishing = true;
+    var btn = $("#publishBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="spin"></i><span>Publishing</span>';
+
+    var uploads = pendingUploads();
+    var chain = Promise.resolve();
+    uploads.forEach(function (l) {
+      chain = chain.then(function () {
+        return putFile(l.src, l.pending, "Add logo: " + (l.name || l.src)).then(function () { delete l.pending; });
+      });
+    });
+    ["videos", "logos"].forEach(function (kind) {
+      chain = chain.then(function () {
+        if (!isDirty(kind)) return;
+        var json = serialize(kind);
+        return putFile("data/" + kind + ".json", b64encodeText(json), "Update " + kind, remote[kind].sha).then(function (res) {
+          remote[kind].sha = res.content && res.content.sha;
+          remote[kind].json = json;
+        });
+      });
+    });
+    chain.then(function () {
+      toast("Published! Your site will show the changes in about a minute.");
+    }).catch(function (e) {
+      var msg = e.status === 401 ? "GitHub didn't accept your token. Please connect again."
+              : e.status === 403 || e.status === 404 ? "Your token can't write to " + cfg.repo + ". Check it has Contents: Read and write."
+              : "Couldn't publish: " + e.message;
+      toast(msg, true);
+      if (e.status === 401) openConnect();
+    }).then(function () {
+      publishing = false;
+      btn.innerHTML = "<span>Publish</span>";
+      refreshStatus();
+    });
+  }
+
+  /* ---------------- preview ---------------- */
+  var frame = $("#frame"), frameReady = false, previewTimer;
+  window.addEventListener("message", function (e) {
+    if (e.origin !== location.origin || !e.data) return;
+    if (e.data.type === "ssw-ready") { frameReady = true; renderPreview(true); }
+    if (e.data.type === "ssw-height") { frameHeight = Math.max(160, e.data.height); sizeFrame(); }
+  });
+  // render the preview at real desktop / phone width, then scale it to fit the panel
+  var frameHeight = 300;
+  function sizeFrame() {
+    var wrap = $("#frameWrap"), avail = wrap.clientWidth;
+    if (!avail) return;
+    var phone = previewDevice === "phone";
+    var w = phone ? 375 : Math.max(avail, 1280);
+    var k = phone ? Math.min(1, (avail - 40) / w) : avail / w;
+    var pad = phone ? 24 : 0;
+    frame.style.width = w + "px";
+    frame.style.height = frameHeight + "px";
+    frame.style.transform = "translate(" + (phone ? (avail - w * k) / 2 : 0) + "px," + pad + "px) scale(" + k + ")";
+    wrap.style.height = Math.ceil(frameHeight * k + pad * 2) + "px";
+  }
+  if (window.ResizeObserver) new ResizeObserver(sizeFrame).observe($("#frameWrap"));
+  window.addEventListener("resize", sizeFrame);
+  function renderPreview(now) {
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(function () {
+      if (!frameReady || tab === "install" || !state[tab]) return;
+      var data = JSON.parse(JSON.stringify(state[tab]));
+      if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, src: l.preview || resolveSrc(l.src) }; });
+      frame.contentWindow.postMessage({ type: "ssw-render", kind: tab, data: data, bg: previewBg }, location.origin);
+    }, now ? 0 : 180);
+  }
+  function changed() { refreshStatus(); renderPreview(); }
+
+  /* ---------------- drag to reorder ---------------- */
+  function sortable(container, selector, arr, rerender, horizontal) {
+    var from = null;
+    container.addEventListener("dragstart", function (e) {
+      var it = e.target.closest && e.target.closest(selector);
+      if (!it) return;
+      from = +it.dataset.i;
+      it.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      try { e.dataTransfer.setData("text/plain", String(from)); } catch (x) {}
+    });
+    container.addEventListener("dragover", function (e) {
+      if (from === null) return;
+      var it = e.target.closest(selector);
+      if (!it) return;
+      e.preventDefault();
+      $$(selector, container).forEach(function (n) { n.classList.remove("drop-before", "drop-after"); });
+      var r = it.getBoundingClientRect();
+      var after = horizontal ? e.clientX > r.left + r.width / 2 : e.clientY > r.top + r.height / 2;
+      it.classList.add(after ? "drop-after" : "drop-before");
+    });
+    container.addEventListener("drop", function (e) {
+      if (from === null) return;
+      var it = e.target.closest(selector);
+      if (!it) return;
+      e.preventDefault();
+      var to = +it.dataset.i + (it.classList.contains("drop-after") ? 1 : 0);
+      if (to > from) to--;
+      move(arr(), from, to);
+      from = null;
+      rerender(to);
+      changed();
+    });
+    container.addEventListener("dragend", function () {
+      from = null;
+      $$(selector, container).forEach(function (n) { n.classList.remove("dragging", "drop-before", "drop-after"); });
+    });
+  }
+
+  /* ---------------- videos ---------------- */
+  function parseVideo(url) {
+    url = (url || "").trim();
+    var m = url.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/))([\w-]{11})/);
+    if (m) return { type: "youtube", id: m[1] };
+    m = url.match(/vimeo\.com\/(?:[^?#]*?\/)?(\d{5,})(?:\/([0-9a-f]{6,}))?/);
+    if (m) return { type: "vimeo", id: m[1], hash: m[2] };
+    if (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url)) return { type: "file" };
+    return { type: "other" };
+  }
+  var vimeoThumbs = {};
+  function setThumb(box, v) {
+    var info = parseVideo(v.video);
+    if (v.thumbnail) box.style.backgroundImage = "url('" + v.thumbnail.replace(/'/g, "%27") + "')";
+    else if (info.type === "youtube") box.style.backgroundImage = "url('https://i.ytimg.com/vi/" + info.id + "/mqdefault.jpg')";
+    else if (info.type === "vimeo") {
+      var apply = function (u) { if (u) box.style.backgroundImage = "url('" + u + "')"; };
+      if (vimeoThumbs[info.id]) apply(vimeoThumbs[info.id]);
+      else fetch("https://vimeo.com/api/oembed.json?width=320&url=" + encodeURIComponent(v.video)).then(function (r) { return r.json(); })
+        .then(function (d) { vimeoThumbs[info.id] = d.thumbnail_url; apply(d.thumbnail_url); }).catch(function () {});
+    }
+    box.appendChild(el("span", { class: "kind", text: info.type === "other" ? "link" : info.type }));
+  }
+
+  function renderVideoList(flashIndex) {
+    var list = $("#videoList");
+    list.innerHTML = "";
+    var vids = state.videos.videos;
+    if (!vids.length) { list.appendChild(el("div", { class: "empty", text: "No videos yet — paste a link above to add your first one." })); return; }
+    vids.forEach(function (v, i) {
+      var thumb = el("div", { class: "thumb" });
+      setThumb(thumb, v);
+      var bind = function (key) {
+        return function (e) { v[key] = e.target.value; if (key === "link") linkText.hidden = !v.link; changed(); };
+      };
+      var linkText = el("input", { class: "input", type: "text", value: v.linkText || "", placeholder: "Link label (e.g. View)", "aria-label": "Link label", oninput: bind("linkText") });
+      linkText.hidden = !v.link;
+      var fields = el("div", { class: "fields" }, [
+        el("input", { class: "input title", type: "text", value: v.title || "", placeholder: "Title", "aria-label": "Title", oninput: bind("title") }),
+        el("input", { class: "input", type: "text", value: v.meta || "", placeholder: "Small line under the title (e.g. Music video)", "aria-label": "Subtitle", oninput: bind("meta") }),
+        el("div", { class: "row" }, [
+          el("input", { class: "input", type: "url", inputmode: "url", value: v.link || "", placeholder: "Optional link (https://…)", "aria-label": "Optional link", oninput: bind("link") }),
+          linkText
+        ]),
+        el("div", { class: "src-line" }, [el("a", { href: v.video, target: "_blank", rel: "noopener", text: v.video })])
+      ]);
+      var actions = el("div", { class: "actions" }, [
+        el("button", { class: "icon-btn", type: "button", title: "Move up", "aria-label": "Move up", html: ICON.up, disabled: i === 0 ? "" : null, onclick: function () { move(vids, i, i - 1); renderVideoList(i - 1); changed(); } }),
+        el("button", { class: "icon-btn", type: "button", title: "Move down", "aria-label": "Move down", html: ICON.down, disabled: i === vids.length - 1 ? "" : null, onclick: function () { move(vids, i, i + 1); renderVideoList(i + 1); changed(); } }),
+        el("button", { class: "icon-btn danger", type: "button", title: "Remove", "aria-label": "Remove video", html: ICON.x, onclick: function () {
+          if (!confirm("Remove “" + (v.title || "this video") + "”?")) return;
+          vids.splice(i, 1); renderVideoList(); changed(); toast("Removed — press Publish to update your site.");
+        } })
+      ]);
+      var handle = el("div", { class: "handle", html: ICON.grip, title: "Drag to reorder" });
+      var item = el("div", { class: "item" + (i === flashIndex ? " flash" : ""), "data-i": i }, [handle, thumb, fields, actions]);
+      handle.addEventListener("mousedown", function () { item.draggable = true; });
+      item.addEventListener("dragend", function () { item.draggable = false; });
+      list.appendChild(item);
+    });
+  }
+
+  $("#addVideoForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var input = $("#addVideoUrl"), url = input.value.trim();
+    if (!url) return;
+    var info = parseVideo(url);
+    if (info.type === "youtube") url = "https://www.youtube.com/watch?v=" + info.id;
+    var v = { video: url, title: "", meta: "" };
+    state.videos.videos.unshift(v);
+    input.value = "";
+    renderVideoList(0);
+    changed();
+    var oembed = info.type === "youtube" ? "https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent(url)
+               : info.type === "vimeo" ? "https://vimeo.com/api/oembed.json?url=" + encodeURIComponent(url) : null;
+    if (oembed) fetch(oembed).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d || v.title) return;
+      v.title = (d.title || "").replace(/\s*\|\s*(Netflix|Official.*)$/i, "").replace(/\s*\((Official[^)]*)\)\s*$/i, "").trim();
+      renderVideoList(state.videos.videos.indexOf(v));
+      changed();
+    }).catch(function () {});
+    toast("Added — edit the title if you like, then Publish.");
+  });
+
+  /* ---------------- logos ---------------- */
+  function renderLogoList(flashIndex) {
+    var list = $("#logoList");
+    list.innerHTML = "";
+    var logos = state.logos.logos;
+    if (!logos.length) { list.appendChild(el("div", { class: "empty", style: "grid-column:1/-1", text: "No logos yet — drop some files above." })); return; }
+    logos.forEach(function (l, i) {
+      var imgBox = el("div", { class: "logo-img", title: "Drag to reorder" }, [
+        el("img", { src: l.preview || resolveSrc(l.src), alt: "" }),
+        l.pending ? el("span", { class: "new", text: "New" }) : null
+      ]);
+      var card = el("div", { class: "logo-card" + (i === flashIndex ? " flash" : ""), "data-i": i }, [
+        imgBox,
+        el("input", { class: "input", type: "text", value: l.name || "", placeholder: "Client name", "aria-label": "Client name", oninput: function (e) { l.name = e.target.value; changed(); } }),
+        el("input", { class: "input", type: "url", inputmode: "url", value: l.link || "", placeholder: "Optional link", "aria-label": "Optional link", oninput: function (e) { l.link = e.target.value; changed(); } }),
+        el("div", { class: "logo-actions" }, [
+          el("button", { class: "icon-btn", type: "button", title: "Move earlier", "aria-label": "Move earlier", html: ICON.left, disabled: i === 0 ? "" : null, onclick: function () { move(logos, i, i - 1); renderLogoList(i - 1); changed(); } }),
+          el("button", { class: "icon-btn", type: "button", title: "Move later", "aria-label": "Move later", html: ICON.right, disabled: i === logos.length - 1 ? "" : null, onclick: function () { move(logos, i, i + 1); renderLogoList(i + 1); changed(); } }),
+          el("button", { class: "icon-btn danger", type: "button", title: "Remove", "aria-label": "Remove logo", html: ICON.x, onclick: function () {
+            if (!confirm("Remove " + (l.name || "this logo") + "?")) return;
+            logos.splice(i, 1); renderLogoList(); changed(); toast("Removed — press Publish to update your site.");
+          } })
+        ])
+      ]);
+      imgBox.addEventListener("mousedown", function () { card.draggable = true; });
+      card.addEventListener("dragend", function () { card.draggable = false; });
+      list.appendChild(card);
+    });
+  }
+
+  function readAsDataURL(blob) {
+    return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsDataURL(blob); });
+  }
+  // shrink very large raster logos so the site stays fast
+  function prepareImage(file) {
+    return readAsDataURL(file).then(function (dataUrl) {
+      if (/svg/.test(file.type) || file.size < 150 * 1024) return { dataUrl: dataUrl, ext: (file.name.split(".").pop() || "png").toLowerCase() };
+      return new Promise(function (res) {
+        var img = new Image();
+        img.onload = function () {
+          var maxH = 240, scale = Math.min(1, maxH / img.naturalHeight, 800 / img.naturalWidth);
+          var c = document.createElement("canvas");
+          c.width = Math.round(img.naturalWidth * scale);
+          c.height = Math.round(img.naturalHeight * scale);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          res({ dataUrl: c.toDataURL("image/png"), ext: "png" });
+        };
+        img.onerror = function () { res({ dataUrl: dataUrl, ext: (file.name.split(".").pop() || "png").toLowerCase() }); };
+        img.src = dataUrl;
+      });
+    });
+  }
+  function addFiles(files) {
+    files = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type); });
+    if (!files.length) { toast("Those don't look like image files.", true); return; }
+    Promise.all(files.map(function (f) {
+      return prepareImage(f).then(function (p) {
+        var name = prettyName(f.name);
+        var ext = p.ext === "jpeg" ? "jpg" : p.ext.replace(/[^a-z0-9]/g, "") || "png";
+        return { name: name, src: "logos/" + slug(name) + "-" + Date.now().toString(36).slice(-5) + "." + ext, preview: p.dataUrl, pending: p.dataUrl.split(",")[1] };
+      });
+    })).then(function (items) {
+      var logos = state.logos.logos;
+      items.forEach(function (it) { logos.push(it); });
+      renderLogoList(logos.length - 1);
+      changed();
+      toast(items.length === 1 ? "Logo added — check the name, then Publish." : items.length + " logos added — check the names, then Publish.");
+    });
+  }
+  var drop = $("#dropZone");
+  $("#fileInput").addEventListener("change", function (e) { addFiles(e.target.files); e.target.value = ""; });
+  ["dragenter", "dragover"].forEach(function (t) { drop.addEventListener(t, function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, "Files") > -1) { e.preventDefault(); drop.classList.add("over"); } }); });
+  ["dragleave", "drop"].forEach(function (t) { drop.addEventListener(t, function () { drop.classList.remove("over"); }); });
+  drop.addEventListener("drop", function (e) { if (e.dataTransfer.files.length) { e.preventDefault(); addFiles(e.dataTransfer.files); } });
+  // let people drop files anywhere on the Logos tab
+  document.addEventListener("dragover", function (e) { if (tab === "logos" && e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, "Files") > -1) e.preventDefault(); });
+  document.addEventListener("drop", function (e) { if (tab === "logos" && e.dataTransfer && e.dataTransfer.files.length && !drop.contains(e.target)) { e.preventDefault(); addFiles(e.dataTransfer.files); } });
+
+  $("#addLogoUrlForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var input = $("#addLogoUrl"), url = input.value.trim();
+    if (!url) return;
+    var name = prettyName(decodeURIComponent(url.split(/[?#]/)[0].split("/").pop() || "Client"));
+    state.logos.logos.push({ name: name, src: url });
+    input.value = "";
+    renderLogoList(state.logos.logos.length - 1);
+    changed();
+  });
+
+  /* ---------------- settings forms ---------------- */
+  function seg(options, value, onChange) {
+    var wrap = el("div", { class: "seg" });
+    options.forEach(function (o) {
+      wrap.appendChild(el("button", { type: "button", "aria-pressed": String(o[0] === value), text: o[1], onclick: function () {
+        $$("button", wrap).forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+        this.setAttribute("aria-pressed", "true");
+        onChange(o[0]);
+      } }));
+    });
+    return wrap;
+  }
+  function row(label, sub, control) {
+    return el("div", { class: "set-row" }, [el("div", { class: "lbl" }, [label, sub ? el("span", { class: "sub", text: sub }) : null]), control]);
+  }
+  function toggle(obj, key) {
+    return el("label", { class: "switch" }, [
+      el("input", { type: "checkbox", checked: obj[key] ? "" : null, onchange: function (e) { obj[key] = e.target.checked; changed(); } }),
+      el("i")
+    ]);
+  }
+  function slider(obj, key, min, max, step, fmt) {
+    var out = el("output", { text: fmt(obj[key]) });
+    return el("div", { class: "range" }, [
+      el("input", { type: "range", min: min, max: max, step: step, value: obj[key], oninput: function (e) { obj[key] = +e.target.value; out.textContent = fmt(obj[key]); changed(); } }),
+      out
+    ]);
+  }
+  function pick(obj, key, options) { return seg(options, obj[key], function (v) { obj[key] = v; changed(); }); }
+
+  function renderVideoSettings() {
+    var s = state.videos.settings, box = $("#videoSettings");
+    box.innerHTML = "";
+    box.appendChild(row("Section colour", "Light for grey/white sections, dark for black", pick(s, "theme", [["light", "Light"], ["dark", "Dark"]])));
+    box.appendChild(row("Videos across on desktop", "Phones always show one at a time", pick(s, "perViewDesktop", [[2, "2"], [3, "3"], [4, "4"]])));
+    box.appendChild(row("Soft covers", "Covers slightly muted until hovered", toggle(s, "softThumbnails")));
+    box.appendChild(row("Open links in a new tab", null, toggle(s, "openLinksInNewTab")));
+  }
+  function renderLogoSettings() {
+    var s = state.logos.settings, box = $("#logoSettings");
+    box.innerHTML = "";
+    box.appendChild(el("label", { class: "field" }, [el("span", { text: "Heading (leave empty to hide)" }),
+      el("input", { class: "input", type: "text", value: s.heading || "", oninput: function (e) { s.heading = e.target.value; changed(); } })]));
+    box.appendChild(row("Logo style", "Grey keeps a hint of the original; Mono makes them all one colour", pick(s, "style", [["grey", "Grey"], ["mono", "Mono"]])));
+    box.appendChild(row("Section colour", null, pick(s, "theme", [["light", "Light"], ["dark", "Dark"]])));
+    box.appendChild(row("Greyness", null, slider(s, "greyscale", 0, 100, 5, function (v) { return v + "%"; })));
+    box.appendChild(row("Fade", "How see-through the logos are", slider(s, "opacity", 0.2, 1, 0.05, function (v) { return Math.round(v * 100) + "%"; })));
+    box.appendChild(row("Colour on hover", null, toggle(s, "colorOnHover")));
+    box.appendChild(row("Speed", null, slider(s, "speed", 8, 120, 2, function (v) { return v; })));
+    box.appendChild(row("Direction", null, pick(s, "direction", [["left", "← Left"], ["right", "Right →"]])));
+    box.appendChild(row("Logo size", null, slider(s, "logoHeight", 24, 80, 2, function (v) { return v + "px"; })));
+    box.appendChild(row("Max logo width", "Stops long wordmarks getting huge", slider(s, "logoMaxWidth", 80, 260, 10, function (v) { return v + "px"; })));
+    box.appendChild(row("Space between", null, slider(s, "gap", 32, 160, 4, function (v) { return v + "px"; })));
+    box.appendChild(row("Pause on hover", null, toggle(s, "pauseOnHover")));
+    box.appendChild(row("Soft edges", "Fade the logos out at the sides", toggle(s, "fadeEdges")));
+  }
+
+  /* ---------------- install tab ---------------- */
+  function renderInstall() {
+    var base = siteBase();
+    $("#codeVideos").textContent = '<div class="ss-videos"></div>\n<script src="' + base + 'embed/videos.js"><\/script>';
+    $("#codeLogos").textContent = '<div class="ss-logos" data-theme="light"></div>\n<script src="' + base + 'embed/logos.js"><\/script>';
+    $("#connInfo").textContent = cfg.token
+      ? "Connected to github.com/" + cfg.owner + "/" + cfg.repo + " on this device."
+      : "Not connected on this device — you can look around, but Publish needs a connection.";
+  }
+  $$("[data-copy]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var text = $("#" + b.dataset.copy).textContent;
+      var done = function () { b.innerHTML = "<span>Copied ✓</span>"; setTimeout(function () { b.innerHTML = "<span>Copy</span>"; }, 1800); };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+      else { fallbackCopy(text); done(); }
+    });
+  });
+  function fallbackCopy(text) {
+    var t = el("textarea", { style: "position:fixed;opacity:0" }); t.value = text; document.body.appendChild(t); t.select();
+    try { document.execCommand("copy"); } catch (e) {} t.remove();
+  }
+
+  /* ---------------- tabs ---------------- */
+  function setTab(t) {
+    tab = t;
+    $$(".tab").forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.tab === t)); });
+    $$("[data-view]").forEach(function (v) { v.hidden = v.dataset.view !== t; });
+    $("#previewPanel").hidden = t === "install";
+    $("#main").classList.toggle("full", t === "install");
+    if (t === "install") renderInstall();
+    renderPreview(true);
+    setTimeout(sizeFrame, 0);
+    try { history.replaceState(null, "", "#" + t); } catch (e) {}
+  }
+  $$(".tab").forEach(function (b) { b.addEventListener("click", function () { setTab(b.dataset.tab); }); });
+
+  $$("#bgSeg button").forEach(function (b) { b.addEventListener("click", function () {
+    $$("#bgSeg button").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+    b.setAttribute("aria-pressed", "true");
+    previewBg = b.dataset.v;
+    $("#frameWrap").style.background = { grey: "#dcdcdc", white: "#fff", black: "#000" }[previewBg];
+    renderPreview(true);
+  }); });
+  $$("#deviceSeg button").forEach(function (b) { b.addEventListener("click", function () {
+    $$("#deviceSeg button").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+    b.setAttribute("aria-pressed", "true");
+    previewDevice = b.dataset.v;
+    $("#frameWrap").classList.toggle("phone", previewDevice === "phone");
+    sizeFrame();
+  }); });
+
+  /* ---------------- connect dialog ---------------- */
+  var dlg = $("#connectDlg");
+  function openConnect() {
+    $("#tokenInput").value = "";
+    $("#ownerInput").value = cfg.owner;
+    $("#repoInput").value = cfg.repo;
+    $("#repoNameLbl").textContent = cfg.repo;
+    $("#connectErr").hidden = true;
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+  }
+  $("#connectBtn").addEventListener("click", openConnect);
+  $("#connectBtn2").addEventListener("click", openConnect);
+  $("#disconnectBtn").addEventListener("click", function () {
+    cfg.token = null; lsSet(LS.token, null); renderInstall(); refreshStatus(); toast("Disconnected on this device.");
+  });
+  $("#connectForm").addEventListener("submit", function (e) {
+    if (e.submitter && e.submitter.value === "cancel") return;
+    e.preventDefault();
+    var token = $("#tokenInput").value.trim();
+    var owner = $("#ownerInput").value.trim() || cfg.owner;
+    var repo = $("#repoInput").value.trim() || cfg.repo;
+    if (!token) return;
+    var saveBtn = $("#connectSave");
+    saveBtn.disabled = true;
+    var prev = { token: cfg.token, owner: cfg.owner, repo: cfg.repo };
+    cfg.token = token; cfg.owner = owner; cfg.repo = repo;
+    api("").then(function (info) {
+      if (!info.permissions || !info.permissions.push) throw Object.assign(new Error("no write"), { status: 403 });
+      lsSet(LS.token, token); lsSet(LS.owner, owner); lsSet(LS.repo, repo);
+      dlg.close();
+      toast("Connected! You can publish now.");
+      // pick up version ids so publishing updates cleanly
+      return Promise.all(["videos", "logos"].map(function (k) {
+        return getFile("data/" + k + ".json").then(function (f) { remote[k].sha = f.sha; }).catch(function () {});
+      }));
+    }).catch(function (err) {
+      cfg.token = prev.token; cfg.owner = prev.owner; cfg.repo = prev.repo;
+      var box = $("#connectErr");
+      box.hidden = false;
+      box.textContent = err.status === 401 ? "That token wasn't accepted — check you copied all of it."
+                      : err.status === 404 ? "Couldn't find " + owner + "/" + repo + " with that token. Make sure the token has access to this repository."
+                      : err.status === 403 ? "The token can see the repository but can't write. Set Contents to “Read and write”."
+                      : "Couldn't connect: " + err.message;
+    }).then(function () { saveBtn.disabled = false; renderInstall(); refreshStatus(); });
+  });
+
+  $("#publishBtn").addEventListener("click", publish);
+  window.addEventListener("beforeunload", function (e) {
+    if (isDirty("videos") || isDirty("logos") || pendingUploads().length) { e.preventDefault(); e.returnValue = ""; }
+  });
+  document.addEventListener("keydown", function (e) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); if (!$("#publishBtn").disabled) publish(); }
+  });
+
+  /* ---------------- start ---------------- */
+  sortable($("#videoList"), ".item", function () { return state.videos.videos; }, renderVideoList, false);
+  sortable($("#logoList"), ".logo-card", function () { return state.logos.logos; }, renderLogoList, true);
+
+  Promise.all([loadKind("videos"), loadKind("logos")]).then(function () {
+    if (restoreDraft()) toast("Restored your unpublished changes.");
+    renderVideoList(); renderLogoList();
+    renderVideoSettings(); renderLogoSettings();
+    if (window.innerWidth < 700) $('#deviceSeg button[data-v="phone"]').click();
+    var initial = (location.hash || "").slice(1);
+    setTab(["videos", "logos", "install"].indexOf(initial) > -1 ? initial : "videos");
+    refreshStatus();
+  });
+})();
+</script>
+</body>
+</html>
