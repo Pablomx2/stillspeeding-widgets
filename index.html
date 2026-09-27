@@ -120,9 +120,13 @@
   .list { display: grid; gap: 12px; }
   .empty { border: 1.5px dashed var(--line-strong); border-radius: var(--r-md); padding: 34px 20px; text-align: center; color: var(--muted); font-size: 14px; }
   .item { position: relative; display: grid; grid-template-columns: 22px 132px minmax(0, 1fr) auto; gap: 14px; align-items: start; background: var(--card); border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 14px; transition: border-color .2s, box-shadow .2s, opacity .2s; }
-  .item.dragging { opacity: .4; }
-  .item.drop-before { box-shadow: 0 -3px 0 #000; }
-  .item.drop-after { box-shadow: 0 3px 0 #000; }
+  /* drag to reorder */
+  .handle, .thumb, .logo-img { cursor: grab; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  body.sorting, body.sorting * { cursor: grabbing !important; -webkit-user-select: none; user-select: none; }
+  .drag-ghost { position: fixed; z-index: 60; margin: 0; pointer-events: none; box-shadow: 0 20px 44px rgba(0,0,0,.22), 0 2px 6px rgba(0,0,0,.12); transform: scale(1.03) rotate(-.6deg); border-color: #000 !important; background: #fff; }
+  .drag-placeholder { border-style: dashed !important; border-color: var(--line-strong) !important; background: transparent !important; box-shadow: none !important; }
+  .drag-placeholder > * { visibility: hidden; }
+  .press { transform: scale(.98); transition: transform .26s ease; }
   .item.flash { animation: flash 1.2s ease; }
   @keyframes flash { 0% { border-color: #000; box-shadow: 0 0 0 4px rgba(0,0,0,.12); } 100% { border-color: var(--line); box-shadow: none; } }
   .handle { align-self: center; cursor: grab; color: var(--muted); display: grid; place-items: center; height: 100%; touch-action: none; }
@@ -142,9 +146,6 @@
 
   .logo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
   .logo-card { position: relative; background: var(--card); border: 1.5px solid var(--line); border-radius: var(--r-md); padding: 12px; display: grid; gap: 8px; transition: opacity .2s, box-shadow .2s; }
-  .logo-card.dragging { opacity: .4; }
-  .logo-card.drop-before { box-shadow: -3px 0 0 #000; }
-  .logo-card.drop-after { box-shadow: 3px 0 0 #000; }
   .logo-card.flash { animation: flash 1.2s ease; }
   .logo-img { height: 86px; border-radius: 10px; background: #f1f1f1; display: grid; place-items: center; padding: 14px; cursor: grab; position: relative; }
   .logo-img img { max-height: 52px; max-width: 100%; object-fit: contain; }
@@ -327,7 +328,7 @@
       <p class="hint">YouTube and Vimeo titles fill in automatically; for Instagram just add a title — the cover is pulled in for you. New videos go to the front.</p>
     </div>
     <div class="panel">
-      <div class="panel-head"><h2>Your videos</h2><span class="hint" id="videoHint">Drag or use the arrows</span></div>
+      <div class="panel-head"><h2>Your videos</h2><span class="hint" id="videoHint">Drag the picture to reorder · hold on phones</span></div>
       <div class="list" id="videoList"></div>
       <details class="more" style="margin-top:20px">
         <summary>Look &amp; feel</summary>
@@ -358,7 +359,7 @@
       </form>
     </div>
     <div class="panel">
-      <div class="panel-head"><h2>Your clients</h2><span class="hint">Drag or use the arrows</span></div>
+      <div class="panel-head"><h2>Your clients</h2><span class="hint">Drag the logo to reorder · hold on phones</span></div>
       <div class="logo-grid" id="logoList"></div>
       <details class="more" style="margin-top:20px">
         <summary>Look &amp; feel</summary>
@@ -798,43 +799,123 @@
   }
   function changed() { refreshStatus(); renderPreview(); }
 
-  /* ---------------- drag to reorder ---------------- */
-  function sortable(container, selector, arr, rerender, horizontal) {
-    var from = null;
-    container.addEventListener("dragstart", function (e) {
-      var it = e.target.closest && e.target.closest(selector);
-      if (!it) return;
-      from = +it.dataset.i;
-      it.classList.add("dragging");
-      e.dataTransfer.effectAllowed = "move";
-      try { e.dataTransfer.setData("text/plain", String(from)); } catch (x) {}
+  /* ---------------- drag to reorder ----------------
+     Pointer-based (works with mouse, trackpad and touch). Mouse: grab and move. Touch:
+     press and hold briefly, then drag — so normal scrolling still works. The item lifts and
+     follows the pointer while the others slide out of its way. */
+  function sortable(container, itemSel, handleSel, getArr, rerender, grid) {
+    var s = null; // active drag session
+
+    function items() { return $$(itemSel, container); }
+    function flip(mutate) {
+      var before = new Map();
+      items().forEach(function (n) { if (n !== s.el) before.set(n, n.getBoundingClientRect()); });
+      mutate();
+      before.forEach(function (r0, n) {
+        var r1 = n.getBoundingClientRect(), dx = r0.left - r1.left, dy = r0.top - r1.top;
+        if (dx || dy) n.animate([{ transform: "translate(" + dx + "px," + dy + "px)" }, { transform: "none" }], { duration: 200, easing: "cubic-bezier(.2,.7,.2,1)" });
+      });
+    }
+    function begin() {
+      var el = s.el, r = el.getBoundingClientRect();
+      s.active = true;
+      s.offX = s.x - r.left; s.offY = s.y - r.top;
+      var ghost = el.cloneNode(true);
+      ghost.classList.add("drag-ghost");
+      ghost.removeAttribute("data-i");
+      ghost.style.width = r.width + "px";
+      ghost.style.height = r.height + "px";
+      ghost.style.left = r.left + "px";
+      ghost.style.top = r.top + "px";
+      document.body.appendChild(ghost);
+      s.ghost = ghost;
+      el.classList.add("drag-placeholder");
+      document.body.classList.add("sorting");
+      if (s.touch && navigator.vibrate) try { navigator.vibrate(8); } catch (x) {}
+      try { s.handle.setPointerCapture(s.id); } catch (x) {}
+    }
+    function place(x, y) {
+      s.ghost.style.left = (x - s.offX) + "px";
+      s.ghost.style.top = (y - s.offY) + "px";
+      var target = null, after = false;
+      items().forEach(function (n) {
+        if (n === s.el || target) return;
+        if (n.getAnimations && n.getAnimations().length) return; // still sliding — wait, or items flip back and forth
+        var r = n.getBoundingClientRect();
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+          target = n;
+          after = grid ? x > r.left + r.width / 2 : y > r.top + r.height / 2;
+        }
+      });
+      if (!target) return;
+      var ref = after ? target.nextSibling : target;
+      if (ref === s.el || s.el.nextSibling === ref) return; // already there
+      flip(function () { container.insertBefore(s.el, ref); });
+    }
+    function autoScroll() {
+      if (!s || !s.active) return;
+      var edge = 70, v = 0;
+      if (s.y < edge + 70) v = -Math.ceil((edge + 70 - s.y) / 6);
+      else if (s.y > innerHeight - edge) v = Math.ceil((s.y - (innerHeight - edge)) / 6);
+      if (v) { window.scrollBy(0, v); place(s.x, s.y); }
+      s.raf = requestAnimationFrame(autoScroll);
+    }
+    function finish(commit) {
+      if (!s) return;
+      clearTimeout(s.timer);
+      cancelAnimationFrame(s.raf);
+      var sess = s;
+      s = null;
+      document.body.classList.remove("sorting");
+      if (!sess.active) return;
+      var to = items().indexOf(sess.el), from = sess.from;
+      var r = sess.el.getBoundingClientRect();
+      // settle the lifted copy into its new slot, then redraw the list
+      var anim = sess.ghost.animate([
+        { left: sess.ghost.style.left, top: sess.ghost.style.top },
+        { left: r.left + "px", top: r.top + "px" }
+      ], { duration: 160, easing: "cubic-bezier(.2,.7,.2,1)", fill: "forwards" });
+      var done = false;
+      function complete() {
+        if (done) return;
+        done = true;
+        sess.ghost.remove();
+        if (commit && to > -1 && to !== from) { move(getArr(), from, to); rerender(to); changed(); }
+        else { sess.el.classList.remove("drag-placeholder"); rerender(); }
+      }
+      anim.onfinish = complete;
+      setTimeout(complete, 260); // don't depend on the animation (it pauses in background tabs)
+    }
+
+    container.addEventListener("pointerdown", function (e) {
+      var handle = e.target.closest(handleSel), el = handle && handle.closest(itemSel);
+      if (!el || !container.contains(el) || e.button !== 0 || s) return;
+      if (e.target.closest("button, input, a, select, textarea")) return;
+      s = { el: el, handle: handle, id: e.pointerId, from: items().indexOf(el), x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, touch: e.pointerType !== "mouse", active: false };
+      if (s.touch) {
+        el.classList.add("press");
+        s.timer = setTimeout(function () { if (s && !s.active) { el.classList.remove("press"); begin(); autoScroll(); } }, 260);
+      }
+      if (!s.touch) e.preventDefault(); // stop text selection / native image drag
     });
-    container.addEventListener("dragover", function (e) {
-      if (from === null) return;
-      var it = e.target.closest(selector);
-      if (!it) return;
-      e.preventDefault();
-      $$(selector, container).forEach(function (n) { n.classList.remove("drop-before", "drop-after"); });
-      var r = it.getBoundingClientRect();
-      var after = horizontal ? e.clientX > r.left + r.width / 2 : e.clientY > r.top + r.height / 2;
-      it.classList.add(after ? "drop-after" : "drop-before");
+    window.addEventListener("pointermove", function (e) {
+      if (!s || e.pointerId !== s.id) return;
+      s.x = e.clientX; s.y = e.clientY;
+      var dist = Math.hypot(s.x - s.sx, s.y - s.sy);
+      if (!s.active) {
+        if (s.touch) { if (dist > 8) { s.el.classList.remove("press"); clearTimeout(s.timer); s = null; } return; } // it's a scroll
+        if (dist < 5) return;
+        begin(); autoScroll();
+      }
+      place(s.x, s.y);
     });
-    container.addEventListener("drop", function (e) {
-      if (from === null) return;
-      var it = e.target.closest(selector);
-      if (!it) return;
-      e.preventDefault();
-      var to = +it.dataset.i + (it.classList.contains("drop-after") ? 1 : 0);
-      if (to > from) to--;
-      move(arr(), from, to);
-      from = null;
-      rerender(to);
-      changed();
-    });
-    container.addEventListener("dragend", function () {
-      from = null;
-      $$(selector, container).forEach(function (n) { n.classList.remove("dragging", "drop-before", "drop-after"); });
-    });
+    // while dragging on touch, stop the page from scrolling under the finger
+    window.addEventListener("touchmove", function (e) { if (s && s.active) e.preventDefault(); }, { passive: false });
+    window.addEventListener("pointerup", function (e) { if (s && e.pointerId === s.id) { if (s.el) s.el.classList.remove("press"); finish(true); } });
+    window.addEventListener("pointercancel", function (e) { if (s && e.pointerId === s.id) { if (s.el) s.el.classList.remove("press"); finish(false); } });
+    window.addEventListener("keydown", function (e) { if (e.key === "Escape" && s && s.active) finish(false); });
+    container.addEventListener("dragstart", function (e) { if (e.target.closest(handleSel)) e.preventDefault(); });
+    container.addEventListener("contextmenu", function (e) { if (s) e.preventDefault(); }); // long-press menu on phones
   }
 
   /* ---------------- videos ---------------- */
@@ -903,8 +984,6 @@
       var handle = el("div", { class: "handle", html: ICON.grip, title: "Drag to reorder" });
       if (v.hidden) thumb.appendChild(el("span", { class: "hidden-tag", text: "Hidden" }));
       var item = el("div", { class: "item" + (i === flashIndex ? " flash" : "") + (v.hidden ? " is-hidden" : ""), "data-i": i }, [handle, thumb, fields, actions]);
-      handle.addEventListener("mousedown", function () { item.draggable = true; });
-      item.addEventListener("dragend", function () { item.draggable = false; });
       list.appendChild(item);
     });
   }
@@ -1119,8 +1198,6 @@
           } })
         ])
       ]);
-      imgBox.addEventListener("mousedown", function () { card.draggable = true; });
-      card.addEventListener("dragend", function () { card.draggable = false; });
       list.appendChild(card);
     });
   }
@@ -1799,8 +1876,8 @@
   });
 
   /* ---------------- start ---------------- */
-  sortable($("#videoList"), ".item", function () { return state.videos.videos; }, renderVideoList, false);
-  sortable($("#logoList"), ".logo-card", function () { return state.logos.logos; }, renderLogoList, true);
+  sortable($("#videoList"), ".item", ".handle, .thumb", function () { return state.videos.videos; }, renderVideoList, false);
+  sortable($("#logoList"), ".logo-card", ".logo-img", function () { return state.logos.logos; }, renderLogoList, true);
 
   loadLock().then(function () {
     document.body.classList.remove("booting");
