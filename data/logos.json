@@ -12,7 +12,9 @@
     "logoMaxWidth": 140,
     "gap": 80,
     "pauseOnHover": true,
-    "fadeEdges": true
+    "fadeEdges": true,
+    "animation": "glide",
+    "interval": 3
   },
   "logos": [
     {
@@ -22,6 +24,10 @@
     {
       "name": "Amazon",
       "src": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg"
+    },
+    {
+      "name": "Audible",
+      "src": "logos/audible-ironandsolar-rgb-ef3su.png"
     }
   ]
 }
