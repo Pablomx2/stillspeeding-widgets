@@ -168,6 +168,7 @@
         { duration: duration, iterations: Infinity, easing: "linear" }
       );
       anim.currentTime = (progress % 1) * duration;
+      if (driving) { cancelGlide(); rate = 0; }
       anim.playbackRate = rate;
       if (!onScreen) anim.pause();
     }
@@ -188,24 +189,56 @@
       cleanups.push(function () { window.removeEventListener("resize", relayout); });
     }
 
-    // hovering eases the strip to a gentle stop (and back up to speed) instead of freezing
-    var onScreen = true, rate = 1, rampId = 0;
-    function ease(t) { return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
-    function rampTo(target, ms) {
-      cancelAnimationFrame(rampId);
-      var from = rate, start = performance.now();
-      if (from === target) { rate = target; if (anim) anim.playbackRate = rate; return; }
+    /* Hover: the strip glides to a stop with a tiny settle-back bounce, then eases back up
+       to speed when the mouse leaves. The stop is driven by position so the bounce is exact;
+       the restart is driven by playback speed. */
+    var onScreen = true, rate = 1, rafId = 0, driving = false;
+    var STOP_MS = 1700, GO_MS = 1800, BOUNCE = 2.2; // BOUNCE: 0 = none, ~2 = very subtle
+    function backOut(p) { var x = p - 1; return 1 + (BOUNCE + 1) * x * x * x + BOUNCE * x * x; }
+    function easeInOut(p) { return -(Math.cos(Math.PI * p) - 1) / 2; }
+    function cancelGlide() { cancelAnimationFrame(rafId); driving = false; }
+    cleanups.push(cancelGlide);
+
+    function glideToStop() {
+      cancelGlide();
+      if (!anim) { rate = 0; return; }
+      var v0 = rate, t0 = anim.currentTime || 0;
+      // distance chosen so the glide starts at exactly the current speed (no jolt)
+      var dist = STOP_MS * v0 / (3 + BOUNCE);
+      if (dist < 1) { rate = 0; anim.playbackRate = 0; return; }
+      anim.pause();
+      driving = true;
+      var start = performance.now(), last = start, lastPos = t0;
       (function step(now) {
         if (dead) return;
-        var t = Math.min(1, (now - start) / ms);
-        rate = from + (target - from) * ease(t);
-        if (anim) anim.playbackRate = rate;
-        if (t < 1) rampId = requestAnimationFrame(step);
+        var p = Math.min(1, (now - start) / STOP_MS);
+        var pos = t0 + dist * backOut(p);
+        anim.currentTime = pos;
+        if (now > last) rate = Math.max(0, (pos - lastPos) / (now - last));
+        last = now; lastPos = pos;
+        if (p < 1) { rafId = requestAnimationFrame(step); return; }
+        driving = false;
+        rate = 0;
+        anim.playbackRate = 0;
+        if (onScreen) anim.play();
       })(start);
     }
-    cleanups.push(function () { cancelAnimationFrame(rampId); });
-    function setHover(on) { rampTo(on ? 0 : 1, on ? 900 : 1100); }
-    function syncScreen() { if (anim) onScreen ? anim.play() : anim.pause(); }
+    function glideToSpeed() {
+      cancelGlide();
+      if (!anim) { rate = 1; return; }
+      var from = rate, start = performance.now();
+      anim.playbackRate = from;
+      if (onScreen) anim.play();
+      (function step(now) {
+        if (dead) return;
+        var p = Math.min(1, (now - start) / GO_MS);
+        rate = from + (1 - from) * easeInOut(p);
+        anim.playbackRate = rate;
+        if (p < 1) rafId = requestAnimationFrame(step);
+      })(start);
+    }
+    function setHover(on) { on ? glideToStop() : glideToSpeed(); }
+    function syncScreen() { if (anim && !driving) onScreen ? anim.play() : anim.pause(); }
     if (S.pauseOnHover) {
       viewport.addEventListener("mouseenter", function () { setHover(true); });
       viewport.addEventListener("mouseleave", function () { setHover(false); });
