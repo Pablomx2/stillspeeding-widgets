@@ -22,7 +22,7 @@
     ".ssl-track{display:flex;align-items:center;width:max-content;will-change:transform}",
     ".ssl-set{display:flex;align-items:center;flex-shrink:0}",
     ".ssl-root .ssl-item{display:flex;align-items:center;justify-content:center;align-self:center;line-height:0;padding:0 calc(var(--ssl-gap) / 2);flex-shrink:0;text-decoration:none!important;border:0}",
-    ".ssl-root .ssl-item img{display:block;height:var(--ssl-h,var(--ssl-height));width:auto;max-width:var(--ssl-max-width);margin:0;object-fit:contain;filter:grayscale(var(--ssl-gray)) contrast(1.05);opacity:var(--ssl-opacity);transition:filter .5s ease,opacity .5s ease;-webkit-user-drag:none;user-select:none}",
+    ".ssl-root .ssl-item img{display:block;height:var(--ssl-h,var(--ssl-height));width:auto;max-width:var(--ssl-max-width);margin:0;object-fit:contain;transform:translateY(calc(var(--ssl-h,var(--ssl-height)) * var(--ssl-dy,0)));filter:grayscale(var(--ssl-gray)) contrast(1.05);opacity:var(--ssl-opacity);transition:filter .5s ease,opacity .5s ease;-webkit-user-drag:none;user-select:none}",
     ".ssl-root.ssl-mono .ssl-item img{filter:grayscale(1) brightness(0)}",
     ".ssl-root.ssl-mono.ssl-dark .ssl-item img{filter:grayscale(1) brightness(0) invert(1)}",
     "@media (hover:hover){.ssl-root.ssl-hover .ssl-item:hover img{filter:none;opacity:1}}",
@@ -37,7 +37,7 @@
     ".ssl-slot.is-out{opacity:0;transform:translateY(6px);filter:blur(3px)}",
     ".ssl-root .ssl-slot .ssl-item{padding:0 8px}",
     ".ssl-empty{padding:30px 0;text-align:center;opacity:.5;font-size:14px}",
-    "@media (max-width:640px){.ssl-root{--ssl-gap:48px!important;--ssl-fade:10%}.ssl-root .ssl-item img{height:calc(var(--ssl-h,var(--ssl-height)) * .78);max-width:calc(var(--ssl-max-width) * .8)}.ssl-heading{font-size:13px;gap:12px;margin-bottom:22px}}"
+    "@media (max-width:640px){.ssl-root{--ssl-gap:48px!important;--ssl-fade:10%}.ssl-root .ssl-item img{height:calc(var(--ssl-h,var(--ssl-height)) * .78);transform:translateY(calc(var(--ssl-h,var(--ssl-height)) * .78 * var(--ssl-dy,0)));max-width:calc(var(--ssl-max-width) * .8)}.ssl-heading{font-size:13px;gap:12px;margin-bottom:22px}}"
   ].join("\n");
 
   function ensureAssets() {
@@ -163,9 +163,19 @@
         if (!w || !h) return;
         var k = Math.pow(2.5 / (w / h), 0.4);                   // wider → a bit shorter, squarer → a bit taller
         var ink = +img.getAttribute("data-ink");
-        if (ink > 0) k *= Math.min(1.2, Math.max(0.85, Math.pow(0.35 / ink, 0.2))); // heavy solid marks → a touch smaller
+        if (ink > 0) k *= Math.min(1.25, Math.max(0.8, Math.pow(0.35 / ink, 0.3))); // heavy, bold marks → smaller; light ones → larger
         k = Math.min(1.5, Math.max(0.55, k));
         img.style.setProperty("--ssl-h", (S.logoHeight * k).toFixed(1) + "px");
+      });
+    }
+    /* Optical centring: line logos up by where their visual weight sits, not by their box.
+       (Amazon's smile drags its box down; Audible's light icon drags its box up.) */
+    function opticalCentre() {
+      Array.prototype.forEach.call(original.querySelectorAll("img"), function (img) {
+        var cy = parseFloat(img.getAttribute("data-cy"));
+        if (isNaN(cy)) return;
+        var shift = Math.max(-0.18, Math.min(0.18, (0.5 - cy) * 0.85)); // fraction of the logo's height
+        img.style.setProperty("--ssl-dy", shift.toFixed(3));
       });
     }
     /* Trim: many logo files have empty space baked in around the artwork, which makes them
@@ -200,6 +210,20 @@
         img.setAttribute("data-trimmed", "1");
         if (x1 < 0) return Promise.resolve();
         var tw = x1 - x0 + 1, th = y1 - y0 + 1;
+
+        // measure the artwork: how bold it is, and where its weight sits vertically
+        var mass = 0, my = 0, solid = 0;
+        for (var yy = y0; yy <= y1; yy++) for (var xx = x0; xx <= x1; xx++) {
+          var a = d[(yy * cw + xx) * 4 + 3];
+          if (a > 12) { mass += a; my += a * (yy - y0 + 0.5); }
+          if (a > 128) solid++;
+        }
+        var transparentBg = tw * th < cw * ch * 0.995 || solid < tw * th * 0.98;
+        if (mass && transparentBg) {
+          img.setAttribute("data-cy", (my / mass / th).toFixed(3));
+          img.setAttribute("data-ink", (Math.round(solid / (tw * th) * 100) / 100 || 0.01));
+        }
+
         if (tw * th > cw * ch * 0.97) return Promise.resolve(); // already tight
         var out = document.createElement("canvas");
         out.width = tw; out.height = th;
@@ -213,7 +237,7 @@
     }
     var imagesSettled = Promise.all(Array.prototype.map.call(original.querySelectorAll("img"), function (img) {
       return loaded(img).then(function () { return tidy(img); });
-    })).then(balance);
+    })).then(function () { balance(); opticalCentre(); });
 
     var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
     var mode = root.dataset.animation || S.animation || "glide";
