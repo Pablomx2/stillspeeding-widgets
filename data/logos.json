@@ -15,7 +15,8 @@
     "fadeEdges": true,
     "animation": "glide",
     "interval": 3,
-    "autoSize": true
+    "autoSize": true,
+    "draggable": true
   },
   "logos": [
     {
@@ -137,6 +138,22 @@
       "cy": 0.492,
       "el": 1.04,
       "er": 1
+    },
+    {
+      "name": "National Basketball Association",
+      "src": "logos/national-basketball-association-ftmay.png",
+      "ink": 0.45,
+      "cy": 0.523,
+      "el": 0.97,
+      "er": 0.92
+    },
+    {
+      "name": "Hot Wheels",
+      "src": "logos/hot-wheels-ftxke.svg",
+      "ink": 0.31,
+      "cy": 0.467,
+      "el": 0.76,
+      "er": 0.35
     }
   ]
 }
