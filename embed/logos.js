@@ -159,7 +159,6 @@
       }
 
       var right = S.direction === "right";
-      var wasPaused = anim && anim.playState === "paused";
       var progress = anim ? (anim.currentTime || 0) / anim.effect.getTiming().duration : 0;
       if (anim) anim.cancel();
       var duration = (setWidth / Math.max(1, S.speed)) * 1000;
@@ -169,7 +168,8 @@
         { duration: duration, iterations: Infinity, easing: "linear" }
       );
       anim.currentTime = (progress % 1) * duration;
-      if (wasPaused) anim.pause();
+      anim.playbackRate = rate;
+      if (!onScreen) anim.pause();
     }
 
     var imgs = Array.prototype.slice.call(original.querySelectorAll("img"));
@@ -188,16 +188,32 @@
       cleanups.push(function () { window.removeEventListener("resize", relayout); });
     }
 
-    var hovering = false, onScreen = true;
-    function sync() { if (anim) (hovering || !onScreen) ? anim.pause() : anim.play(); }
+    // hovering eases the strip to a gentle stop (and back up to speed) instead of freezing
+    var onScreen = true, rate = 1, rampId = 0;
+    function ease(t) { return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+    function rampTo(target, ms) {
+      cancelAnimationFrame(rampId);
+      var from = rate, start = performance.now();
+      if (from === target) { rate = target; if (anim) anim.playbackRate = rate; return; }
+      (function step(now) {
+        if (dead) return;
+        var t = Math.min(1, (now - start) / ms);
+        rate = from + (target - from) * ease(t);
+        if (anim) anim.playbackRate = rate;
+        if (t < 1) rampId = requestAnimationFrame(step);
+      })(start);
+    }
+    cleanups.push(function () { cancelAnimationFrame(rampId); });
+    function setHover(on) { rampTo(on ? 0 : 1, on ? 900 : 1100); }
+    function syncScreen() { if (anim) onScreen ? anim.play() : anim.pause(); }
     if (S.pauseOnHover) {
-      viewport.addEventListener("mouseenter", function () { hovering = true; sync(); });
-      viewport.addEventListener("mouseleave", function () { hovering = false; sync(); });
-      viewport.addEventListener("focusin", function () { hovering = true; sync(); });
-      viewport.addEventListener("focusout", function () { hovering = false; sync(); });
+      viewport.addEventListener("mouseenter", function () { setHover(true); });
+      viewport.addEventListener("mouseleave", function () { setHover(false); });
+      viewport.addEventListener("focusin", function () { setHover(true); });
+      viewport.addEventListener("focusout", function () { setHover(false); });
     }
     if (window.IntersectionObserver) {
-      var io = new IntersectionObserver(function (entries) { onScreen = entries[0].isIntersecting; sync(); });
+      var io = new IntersectionObserver(function (entries) { onScreen = entries[0].isIntersecting; syncScreen(); });
       io.observe(viewport);
       cleanups.push(function () { io.disconnect(); });
     }
