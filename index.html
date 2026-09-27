@@ -147,6 +147,30 @@
   .logo-img .new { position: absolute; top: 8px; left: 8px; background: #000; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 300px; }
   .logo-card .input { height: 36px; font-size: 14px; }
   .logo-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .checker { background-color: #fff; background-image: linear-gradient(45deg, #ececec 25%, transparent 25%), linear-gradient(-45deg, #ececec 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ececec 75%), linear-gradient(-45deg, transparent 75%, #ececec 75%); background-size: 14px 14px; background-position: 0 0, 0 7px, 7px -7px, -7px 0; }
+  .bg-row { display: grid; gap: 6px; }
+  .bg-row .lbl { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .bg-row .seg { width: 100%; }
+  .bg-row .seg button { flex: 1; padding: 0 6px; height: 28px; font-size: 12px; }
+  .bg-note { font-size: 12px; color: var(--muted); }
+  .logo-img.working::after { content: ""; position: absolute; inset: 0; border-radius: 10px; background: rgba(255,255,255,.6); }
+  .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 14px; }
+  .results .msg { grid-column: 1 / -1; font-size: 13px; color: var(--muted); padding: 6px 2px; }
+  .result { -webkit-appearance: none; appearance: none; position: relative; display: grid; gap: 6px; padding: 8px; border: 1.5px solid var(--line); border-radius: 14px; background: #fff; cursor: pointer; text-align: left; transition: border-color .2s, transform .15s; }
+  .result:hover { border-color: #000; }
+  .result:active { transform: scale(.98); }
+  .result .pic { height: 74px; border-radius: 9px; display: grid; place-items: center; padding: 10px; overflow: hidden; }
+  .result .pic img { max-width: 100%; max-height: 54px; object-fit: contain; }
+  .result .src { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .result.busy .pic::after, .result.done .pic::after { position: absolute; inset: 8px 8px auto 8px; height: 74px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+  .result.busy .pic::after { content: "Adding…"; background: rgba(255,255,255,.85); }
+  .result.done { border-color: #000; }
+  .result.done .pic::after { content: "Added ✓"; background: rgba(0,0,0,.78); color: #fff; }
+  .result.skeleton { cursor: default; }
+  .result.skeleton .pic { background: linear-gradient(90deg, #f1f1f1, #e6e6e6, #f1f1f1); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .or-line { display: flex; align-items: center; gap: 12px; margin: 18px 0 14px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .or-line::before, .or-line::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
   .drop { border: 1.5px dashed var(--line-strong); border-radius: var(--r-md); padding: 26px 20px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; display: grid; gap: 6px; justify-items: center; }
   .drop:hover, .drop.over { border-color: #000; background: rgba(0,0,0,.03); }
@@ -214,6 +238,7 @@
     .add-bar .input { flex: none; }
     .logo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .logo-img { height: 70px; }
+    .results { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .range { min-width: 0; max-width: none; flex: 1 1 100%; }
     .set-row { row-gap: 8px; }
   }
@@ -270,10 +295,16 @@
   <section class="stack" data-view="logos" hidden>
     <div class="panel">
       <div class="panel-head"><h2>Add logos</h2></div>
+      <form class="add-bar" id="logoSearchForm" autocomplete="off" role="search">
+        <input class="input" id="logoSearch" type="search" placeholder="Search a company — e.g. Netflix" aria-label="Company name">
+        <button class="btn btn-solid" type="submit"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><span>Find logos</span></button>
+      </form>
+      <div class="results" id="logoResults" hidden></div>
+      <div class="or-line"><span>or add your own</span></div>
       <label class="drop" id="dropZone">
         <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
         <strong>Drop logo files here</strong>
-        <span>or tap to choose · PNG or SVG with a transparent background looks best</span>
+        <span>or tap to choose · backgrounds are removed automatically</span>
         <input type="file" id="fileInput" accept="image/png,image/svg+xml,image/jpeg,image/webp" multiple hidden>
       </label>
       <form class="add-bar" id="addLogoUrlForm" style="margin-top:12px" autocomplete="off">
@@ -405,7 +436,7 @@
 
   function clean(kind, source) {
     var d = JSON.parse(JSON.stringify(source || state[kind]));
-    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; return o; });
+    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; if (l.ink) o.ink = l.ink; return o; });
     if (kind === "videos") d.videos = d.videos.map(function (v) {
       var o = { video: v.video, title: v.title || "", meta: v.meta || "" };
       if (v.link) { o.link = v.link; if (v.linkText) o.linkText = v.linkText; }
@@ -456,7 +487,7 @@
     return new TextDecoder().decode(bytes);
   }
   function slug(s) { return (s || "logo").toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s_]+/g, "-").replace(/-+/g, "-").slice(0, 40) || "logo"; }
-  function prettyName(filename) { return filename.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").replace(/\b(logo|final|copy|white|black|color|colour)\b/gi, "").replace(/\s+/g, " ").trim().replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
+  function prettyName(filename) { return filename.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").replace(/\b(logo|logos|final|copy|white|black|color|colour|bg|background|transparent|png|svg|jpg|hi ?res|v\d+|\d+px)\b/gi, "").replace(/\s+/g, " ").trim().replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }
   function move(arr, from, to) { if (to < 0 || to >= arr.length) return; arr.splice(to, 0, arr.splice(from, 1)[0]); }
   function resolveSrc(src) { return /^(https?:|data:|blob:)/.test(src) ? src : new URL(src, location.href).href; }
 
@@ -502,8 +533,8 @@
 
   /* ---------------- loading ---------------- */
   var FALLBACK = {
-    videos: { settings: { theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, edgeToEdge: true, loop: true }, videos: [] },
-    logos: { settings: { heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55, colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140, gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3 }, logos: [] }
+    videos: { settings: { theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, edgeToEdge: true, loop: true, playIn: "popup" }, videos: [] },
+    logos: { settings: { heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55, colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140, gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3, autoSize: true }, logos: [] }
   };
 
   function loadKind(kind) {
@@ -527,7 +558,7 @@
     var pend = pendingUploads().length > 0;
     ["videos", "logos"].forEach(function (k) { if (isDirty(k) || pend) draft[k] = state[k]; });
     if (Object.keys(draft).length) {
-      try { localStorage.setItem(LS.draft, JSON.stringify(draft)); }
+      try { localStorage.setItem(LS.draft, JSON.stringify(draft, function (k, v) { return k === "_orig" ? undefined : v; })); }
       catch (e) { // images too big for storage — keep the rest
         try {
           if (draft.logos) draft.logos = Object.assign({}, draft.logos, { logos: draft.logos.logos.filter(function (l) { return !l.pending; }) });
@@ -666,7 +697,7 @@
     previewTimer = setTimeout(function () {
       if (!frameReady || tab === "install" || !state[tab]) return;
       var data = JSON.parse(JSON.stringify(state[tab]));
-      if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, src: l.preview || resolveSrc(l.src) }; });
+      if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, ink: l.ink, src: l.preview || resolveSrc(l.src) }; });
       if (tab === "videos") data.videos = data.videos.map(function (v) {
         var o = Object.assign({}, v);
         delete o.pending; delete o.preview;
@@ -870,12 +901,13 @@
     var logos = state.logos.logos;
     if (!logos.length) { list.appendChild(el("div", { class: "empty", style: "grid-column:1/-1", text: "No logos yet — drop some files above." })); return; }
     logos.forEach(function (l, i) {
-      var imgBox = el("div", { class: "logo-img", title: "Drag to reorder" }, [
+      var imgBox = el("div", { class: "logo-img checker", title: "Drag to reorder" }, [
         el("img", { src: l.preview || resolveSrc(l.src), alt: "" }),
         l.pending ? el("span", { class: "new", text: "New" }) : null
       ]);
       var card = el("div", { class: "logo-card" + (i === flashIndex ? " flash" : ""), "data-i": i }, [
         imgBox,
+        backgroundControl(l, i, imgBox),
         el("input", { class: "input", type: "text", value: l.name || "", placeholder: "Client name", "aria-label": "Client name", oninput: function (e) { l.name = e.target.value; changed(); } }),
         el("input", { class: "input", type: "url", inputmode: "url", value: l.link || "", placeholder: "Optional link", "aria-label": "Optional link", oninput: function (e) { l.link = e.target.value; changed(); } }),
         el("div", { class: "logo-actions" }, [
@@ -896,42 +928,339 @@
   function readAsDataURL(blob) {
     return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsDataURL(blob); });
   }
-  // shrink very large raster logos so the site stays fast
-  function prepareImage(file) {
-    return readAsDataURL(file).then(function (dataUrl) {
-      if (/svg/.test(file.type) || file.size < 150 * 1024) return { dataUrl: dataUrl, ext: (file.name.split(".").pop() || "png").toLowerCase() };
-      return new Promise(function (res) {
-        var img = new Image();
-        img.onload = function () {
-          var maxH = 240, scale = Math.min(1, maxH / img.naturalHeight, 800 / img.naturalWidth);
-          var c = document.createElement("canvas");
-          c.width = Math.round(img.naturalWidth * scale);
-          c.height = Math.round(img.naturalHeight * scale);
-          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-          res({ dataUrl: c.toDataURL("image/png"), ext: "png" });
-        };
-        img.onerror = function () { res({ dataUrl: dataUrl, ext: (file.name.split(".").pop() || "png").toLowerCase() }); };
-        img.src = dataUrl;
-      });
+  /* ---------------- logo clean-up: background removal + trimming ----------------
+     Works on a canvas in the browser. It looks at the image's edges: if they're one plain
+     colour, that colour is removed ("colour to alpha", so soft anti-aliased edges stay
+     smooth), then empty space around the logo is trimmed so every logo sizes consistently. */
+  function loadImage(src) {
+    return new Promise(function (res, rej) {
+      var img = new Image();
+      if (!/^data:/.test(src)) img.crossOrigin = "anonymous";
+      img.onload = function () { res(img); };
+      img.onerror = function () { rej(new Error("Couldn't load that image")); };
+      img.src = src;
     });
   }
+  // give SVGs a real pixel size so they rasterise crisply
+  function svgDataUrl(text, targetH) {
+    try {
+      var doc = new DOMParser().parseFromString(text, "image/svg+xml"), svg = doc.documentElement;
+      var vb = (svg.getAttribute("viewBox") || "").split(/[\s,]+/).map(Number);
+      var w = parseFloat(svg.getAttribute("width")) || vb[2] || 300, h = parseFloat(svg.getAttribute("height")) || vb[3] || 150;
+      if (!svg.getAttribute("viewBox")) svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+      var k = (targetH || 360) / h;
+      svg.setAttribute("width", Math.round(w * k));
+      svg.setAttribute("height", Math.round(h * k));
+      text = new XMLSerializer().serializeToString(svg);
+    } catch (e) {}
+    return "data:image/svg+xml;base64," + b64encodeText(text);
+  }
+  function toCanvas(img, isSvg) {
+    var w = img.naturalWidth || img.width || 600, h = img.naturalHeight || img.height || 300;
+    var k = Math.min(900 / w, 360 / h);
+    if (!isSvg) k = Math.min(1, k); // never blow up pixel images
+    var c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(w * k));
+    c.height = Math.max(1, Math.round(h * k));
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return c;
+  }
+  function analyseEdges(c) {
+    var w = c.width, h = c.height, d = c.getContext("2d").getImageData(0, 0, w, h).data;
+    var buckets = {}, total = 0, clear = 0;
+    function visit(x, y) {
+      var i = (y * w + x) * 4;
+      total++;
+      if (d[i + 3] < 40) { clear++; return; }
+      var key = (d[i] >> 4) + "," + (d[i + 1] >> 4) + "," + (d[i + 2] >> 4);
+      var b = buckets[key] || (buckets[key] = { n: 0, r: 0, g: 0, b: 0 });
+      b.n++; b.r += d[i]; b.g += d[i + 1]; b.b += d[i + 2];
+    }
+    for (var x = 0; x < w; x++) { visit(x, 0); visit(x, h - 1); }
+    for (var y = 1; y < h - 1; y++) { visit(0, y); visit(w - 1, y); }
+    if (clear / total > 0.6) return { kind: "clear" };
+    var best = null;
+    for (var k in buckets) if (!best || buckets[k].n > best.n) best = buckets[k];
+    if (!best || best.n / total < 0.55) return { kind: "busy" };
+    return { kind: "solid", color: [best.r / best.n, best.g / best.n, best.b / best.n] };
+  }
+  /* mode "all": every pixel near the background colour goes (clears the inside of letters too)
+     mode "outside": only background connected to the edges goes (keeps white shapes inside)
+     mode "auto": looks at what's enclosed — lots of it means real white artwork, so "outside";
+     only a little means letter holes, so "all". Returns the mode actually used. */
+  function removeBackground(c, bg, mode) {
+    var w = c.width, h = c.height, ctx = c.getContext("2d"), img = ctx.getImageData(0, 0, w, h), d = img.data;
+    function dist(p) { return Math.max(Math.abs(d[p] - bg[0]), Math.abs(d[p + 1] - bg[1]), Math.abs(d[p + 2] - bg[2])); }
+    // soft ramp: only pixels close to the background become see-through, solid colours stay solid
+    function toAlpha(p) {
+      var t = dist(p) / 255;
+      var a = t <= 0.06 ? 0 : t >= 0.4 ? 1 : (function (x) { return x * x * (3 - 2 * x); })((t - 0.06) / 0.34);
+      if (a > 0 && a < 1) for (var ch = 0; ch < 3; ch++) d[p + ch] = Math.max(0, Math.min(255, Math.round((d[p + ch] - (1 - a) * bg[ch]) / a)));
+      d[p + 3] = Math.round(a * d[p + 3]);
+    }
+    var mask = null;
+    if (mode !== "all") {
+      mask = new Uint8Array(w * h);
+      var stack = [];
+      var near = function (i) { var p = i * 4; return d[p + 3] < 40 || dist(p) < 70; };
+      var seed = function (i) { if (!mask[i] && near(i)) { mask[i] = 1; stack.push(i); } };
+      for (var x = 0; x < w; x++) { seed(x); seed((h - 1) * w + x); }
+      for (var y = 0; y < h; y++) { seed(y * w); seed(y * w + w - 1); }
+      while (stack.length) {
+        var i = stack.pop(), x0 = i % w;
+        if (x0 > 0) seed(i - 1);
+        if (x0 < w - 1) seed(i + 1);
+        if (i >= w) seed(i - w);
+        if (i < w * (h - 1)) seed(i + w);
+      }
+      if (mode === "auto") mode = looksLikeBadge() ? "outside" : "all";
+    }
+    // A "badge" is one big, solid shape (a box, circle or banner) holding white artwork —
+    // keep what's inside it. Separate letters or thin linework mean enclosed white is just
+    // the holes in letters, which should go.
+    function looksLikeBadge() {
+      var seen = new Uint8Array(w * h), st = [], total = 0, best = { n: 0 };
+      for (var s0 = 0; s0 < w * h; s0++) {
+        if (seen[s0] || dist(s0 * 4) < 70 || d[s0 * 4 + 3] < 40) continue;
+        var comp = { n: 0, x0: w, y0: h, x1: 0, y1: 0 };
+        seen[s0] = 1; st.push(s0);
+        while (st.length) {
+          var i = st.pop(), x = i % w, y = (i / w) | 0;
+          comp.n++;
+          if (x < comp.x0) comp.x0 = x; if (x > comp.x1) comp.x1 = x; if (y < comp.y0) comp.y0 = y; if (y > comp.y1) comp.y1 = y;
+          var nb = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1];
+          for (var t = 0; t < 4; t++) {
+            var n = nb[t];
+            if (n > -1 && !seen[n] && dist(n * 4) >= 70 && d[n * 4 + 3] >= 40) { seen[n] = 1; st.push(n); }
+          }
+        }
+        total += comp.n;
+        if (comp.n > best.n) best = comp;
+      }
+      if (!best.n) return false;
+      var box = (best.x1 - best.x0 + 1) * (best.y1 - best.y0 + 1), holes = 0;
+      for (var yy = best.y0; yy <= best.y1; yy++) for (var xx = best.x0; xx <= best.x1; xx++) {
+        var k = yy * w + xx;
+        if (!mask[k] && dist(k * 4) < 40) holes++;
+      }
+      return best.n / total >= 0.6 && best.n / box >= 0.5 && holes / box >= 0.03;
+    }
+    if (mode === "all") {
+      for (var p = 0; p < d.length; p += 4) toAlpha(p);
+    } else {
+      for (var q = 0; q < w * h; q++) {
+        var xq = q % w;
+        if (mask[q] || (xq > 0 && mask[q - 1]) || (xq < w - 1 && mask[q + 1]) || (q >= w && mask[q - w]) || (q < w * (h - 1) && mask[q + w])) toAlpha(q * 4);
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return mode;
+  }
+  function trim(c) {
+    var w = c.width, h = c.height, d = c.getContext("2d").getImageData(0, 0, w, h).data;
+    var x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      if (d[(y * w + x) * 4 + 3] > 12) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 < 0) return c;
+    var pad = Math.round(Math.max(x1 - x0, y1 - y0) * 0.03) + 1;
+    x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(w - 1, x1 + pad); y1 = Math.min(h - 1, y1 + pad);
+    var out = document.createElement("canvas");
+    out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
+    out.getContext("2d").drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+    return out;
+  }
+  // how much of the logo's box is solid "ink" — used by the banner's auto-size
+  function inkDensity(c) {
+    var d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data, solid = 0;
+    for (var i = 3; i < d.length; i += 4) if (d[i] > 128) solid++;
+    return Math.round((solid / (c.width * c.height)) * 100) / 100 || 0.01;
+  }
+  /* source: { src, isSvg, svgText? }  mode: "all" | "outside" | "keep" */
+  function processLogo(source, mode) {
+    var src = source.svgText ? svgDataUrl(source.svgText) : source.src;
+    return loadImage(src).then(function (img) {
+      var c = toCanvas(img, source.isSvg);
+      var info = analyseEdges(c);
+      // already-transparent vector logos are kept as SVG — sharpest possible
+      if (info.kind === "clear" && source.svgText) {
+        return { dataUrl: "data:image/svg+xml;base64," + b64encodeText(source.svgText), ext: "svg", bg: "clear", ink: inkDensity(trim(c)) };
+      }
+      var used = mode;
+      if (info.kind === "solid" && mode !== "keep") used = removeBackground(c, info.color, mode);
+      var out = trim(c);
+      return { dataUrl: out.toDataURL("image/png"), ext: "png", bg: info.kind, ink: inkDensity(out), mode: used };
+    });
+  }
+  function logoPath(name, ext) { return "logos/" + slug(name) + "-" + Date.now().toString(36).slice(-5) + "." + ext; }
+  function importLogo(name, source) {
+    return processLogo(source, "auto").then(function (r) {
+      return { name: name, src: logoPath(name, r.ext), preview: r.dataUrl, pending: r.dataUrl.split(",")[1], ink: r.ink, _orig: source, _bg: r.bg, _mode: r.mode || "all" };
+    });
+  }
+  function addLogoItems(items) {
+    var logos = state.logos.logos;
+    items.forEach(function (it) { logos.push(it); });
+    renderLogoList(logos.length - 1);
+    changed();
+  }
+
+  // Remove / Outside only / Keep switch under each newly added logo
+  function backgroundControl(l, i, imgBox) {
+    if (!l._orig || !l.pending) return null;
+    if (l._bg === "clear") return el("div", { class: "bg-note", text: "Background already transparent ✓" });
+    if (l._bg === "busy") return el("div", { class: "bg-note", text: "No plain background found — kept as is" });
+    return el("div", { class: "bg-row" }, [
+      el("span", { class: "lbl", text: "Background" }),
+      seg([["all", "Remove"], ["outside", "Outside only"], ["keep", "Keep"]], l._mode || "all", function (mode) {
+        imgBox.classList.add("working");
+        processLogo(l._orig, mode).then(function (r) {
+          l._mode = mode;
+          l.ink = r.ink;
+          l.preview = r.dataUrl;
+          l.pending = r.dataUrl.split(",")[1];
+          l.src = logoPath(l.name || "logo", r.ext);
+          renderLogoList(i);
+          changed();
+        }).catch(function () { imgBox.classList.remove("working"); toast("Couldn't reprocess that logo.", true); });
+      })
+    ]);
+  }
+
   function addFiles(files) {
     files = Array.prototype.filter.call(files, function (f) { return /^image\//.test(f.type); });
     if (!files.length) { toast("Those don't look like image files.", true); return; }
+    toast(files.length === 1 ? "Cleaning up the logo…" : "Cleaning up " + files.length + " logos…");
     Promise.all(files.map(function (f) {
-      return prepareImage(f).then(function (p) {
-        var name = prettyName(f.name);
-        var ext = p.ext === "jpeg" ? "jpg" : p.ext.replace(/[^a-z0-9]/g, "") || "png";
-        return { name: name, src: "logos/" + slug(name) + "-" + Date.now().toString(36).slice(-5) + "." + ext, preview: p.dataUrl, pending: p.dataUrl.split(",")[1] };
-      });
+      var isSvg = /svg/.test(f.type);
+      var read = isSvg ? f.text().then(function (t) { return { isSvg: true, svgText: t }; })
+                       : readAsDataURL(f).then(function (u) { return { isSvg: false, src: u }; });
+      return read.then(function (source) { return importLogo(prettyName(f.name), source); })
+        .catch(function () { return null; });
     })).then(function (items) {
-      var logos = state.logos.logos;
-      items.forEach(function (it) { logos.push(it); });
-      renderLogoList(logos.length - 1);
-      changed();
-      toast(items.length === 1 ? "Logo added — check the name, then Publish." : items.length + " logos added — check the names, then Publish.");
+      items = items.filter(Boolean);
+      if (!items.length) { toast("Couldn't read those images.", true); return; }
+      addLogoItems(items);
+      toast(items.length === 1 ? "Logo added — background removed. Check the name, then Publish." : items.length + " logos added — check the names, then Publish.");
     });
   }
+
+  /* ---------------- logo search ----------------
+     Free, key-less sources that allow browser access:
+     Wikidata (a company's official logo), Simple Icons (clean one-colour brand marks)
+     and Wikimedia Commons (everything else tagged as a logo). */
+  function qs(o) { o.format = "json"; o.origin = "*"; return Object.keys(o).map(function (k) { return k + "=" + encodeURIComponent(o[k]); }).join("&"); }
+  function getJSON(url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  var WD = "https://www.wikidata.org/w/api.php?", WC = "https://commons.wikimedia.org/w/api.php?";
+  function simpleIconSlug(q) {
+    return q.toLowerCase().replace(/\+/g, "plus").replace(/\./g, "dot").replace(/&/g, "and").normalize("NFKD").replace(/[^a-z0-9]/g, "");
+  }
+  function searchLogos(q) {
+    var words = q.toLowerCase().split(/\s+/).filter(function (w) { return w.length > 2; });
+    var fromWikidata = getJSON(WD + qs({ action: "wbsearchentities", search: q, language: "en", limit: "6", type: "item" })).then(function (d) {
+      var ids = (d.search || []).map(function (x) { return x.id; });
+      if (!ids.length) return [];
+      return getJSON(WD + qs({ action: "wbgetentities", ids: ids.join("|"), props: "claims|labels", languages: "en" })).then(function (e) {
+        var out = [];
+        ids.forEach(function (id) {
+          var ent = e.entities && e.entities[id];
+          if (!ent || !ent.claims) return;
+          var label = (ent.labels && ent.labels.en && ent.labels.en.value) || q;
+          ["P154", "P8972"].forEach(function (prop) {
+            (ent.claims[prop] || []).forEach(function (cl) {
+              var f = cl.mainsnak && cl.mainsnak.datavalue && cl.mainsnak.datavalue.value;
+              if (f) out.push({ file: "File:" + f, name: label, source: "Official logo · Wikidata" });
+            });
+          });
+        });
+        return out;
+      });
+    }).catch(function () { return []; });
+    var fromCommons = getJSON(WC + qs({ action: "query", generator: "search", gsrsearch: q + " logo", gsrnamespace: "6", gsrlimit: "15" })).then(function (d) {
+      var pages = (d.query && d.query.pages) || {};
+      return Object.keys(pages).map(function (k) { return pages[k]; })
+        .sort(function (a, b) { return a.index - b.index; })
+        .filter(function (p) { var t = p.title.toLowerCase(); return !words.length || words.some(function (w) { return t.indexOf(w) > -1; }); })
+        .map(function (p) { return { file: p.title, name: q, source: "Wikimedia Commons" }; });
+    }).catch(function () { return []; });
+    var fromIcons = fetch("https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/" + simpleIconSlug(q) + ".svg")
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (t) { return t && /<svg/.test(t) ? [{ name: q, source: "Simple Icons · one colour", svgText: t }] : []; })
+      .catch(function () { return []; });
+
+    return Promise.all([fromWikidata, fromIcons, fromCommons]).then(function (lists) {
+      var files = [], seen = {};
+      lists[0].concat(lists[2]).forEach(function (c) { var k = c.file.replace(/_/g, " "); if (!seen[k]) { seen[k] = 1; files.push(c); } });
+      if (!files.length) return lists[1];
+      return getJSON(WC + qs({ action: "query", titles: files.slice(0, 40).map(function (c) { return c.file; }).join("|"), prop: "imageinfo", iiprop: "url|mime", iiurlwidth: "600" })).then(function (d) {
+        var norm = {};
+        ((d.query && d.query.normalized) || []).forEach(function (n) { norm[n.from] = n.to; });
+        var pages = (d.query && d.query.pages) || {}, byTitle = {};
+        Object.keys(pages).forEach(function (k) { byTitle[pages[k].title] = pages[k]; });
+        var out = [];
+        files.forEach(function (c) {
+          var p = byTitle[norm[c.file] || c.file], ii = p && p.imageinfo && p.imageinfo[0];
+          if (!ii) return;
+          var fromWd = c.source.indexOf("Wikidata") > -1;
+          if (!/svg|png|webp/.test(ii.mime) && !(fromWd && /jpeg/.test(ii.mime))) return; // photos aren't logos
+          out.push({ name: c.name, source: c.source, thumb: ii.thumburl || ii.url, full: ii.url, isSvg: /svg/.test(ii.mime) });
+        });
+        var wd = out.filter(function (c) { return c.source.indexOf("Wikidata") > -1; });
+        var rest = out.filter(function (c) { return c.source.indexOf("Wikidata") < 0; });
+        return wd.concat(lists[1], rest).slice(0, 12);
+      });
+    });
+  }
+
+  var searchSeq = 0;
+  $("#logoSearchForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var q = $("#logoSearch").value.trim();
+    if (!q) return;
+    var box = $("#logoResults"), seq = ++searchSeq;
+    box.hidden = false;
+    box.innerHTML = "";
+    for (var k = 0; k < 6; k++) box.appendChild(el("div", { class: "result skeleton" }, [el("div", { class: "pic" }), el("div", { class: "src", html: "&nbsp;" })]));
+    searchLogos(q).then(function (results) {
+      if (seq !== searchSeq) return;
+      box.innerHTML = "";
+      if (!results.length) {
+        box.appendChild(el("div", { class: "msg", text: "No logos found for “" + q + "”. Try the full company name, or upload a file below." }));
+        return;
+      }
+      box.appendChild(el("div", { class: "msg", text: "Tap the one you want — the background is removed for you." }));
+      results.forEach(function (r) {
+        var shown = r.svgText ? "data:image/svg+xml;base64," + b64encodeText(r.svgText) : r.thumb;
+        var tile = el("button", { class: "result", type: "button", title: r.name + " — " + r.source }, [
+          el("div", { class: "pic checker" }, [el("img", { src: shown, alt: r.name, loading: "lazy" })]),
+          el("div", { class: "src", text: r.source })
+        ]);
+        tile.querySelector("img").onerror = function () { tile.remove(); };
+        tile.addEventListener("click", function () {
+          if (tile.classList.contains("busy")) return;
+          tile.classList.add("busy");
+          var source = r.svgText ? Promise.resolve({ isSvg: true, svgText: r.svgText })
+            : r.isSvg ? fetch(r.full).then(function (x) { return x.text(); }).then(function (t) { return { isSvg: true, svgText: t }; }, function () { return { isSvg: true, src: r.thumb }; })
+            : Promise.resolve({ isSvg: false, src: r.thumb });
+          source.then(function (s) { return importLogo(r.name, s); }).then(function (item) {
+            tile.classList.remove("busy");
+            tile.classList.add("done");
+            addLogoItems([item]);
+            toast(r.name + " added — press Publish when you're ready.");
+          }).catch(function () {
+            tile.classList.remove("busy");
+            toast("Couldn't use that one — try another.", true);
+          });
+        });
+        box.appendChild(tile);
+      });
+    }).catch(function () {
+      if (seq !== searchSeq) return;
+      box.innerHTML = "";
+      box.appendChild(el("div", { class: "msg", text: "Search isn't reachable right now — you can still upload a file below." }));
+    });
+  });
+
   var drop = $("#dropZone");
   $("#fileInput").addEventListener("change", function (e) { addFiles(e.target.files); e.target.value = ""; });
   ["dragenter", "dragover"].forEach(function (t) { drop.addEventListener(t, function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, "Files") > -1) { e.preventDefault(); drop.classList.add("over"); } }); });
@@ -946,10 +1275,18 @@
     var input = $("#addLogoUrl"), url = input.value.trim();
     if (!url) return;
     var name = prettyName(decodeURIComponent(url.split(/[?#]/)[0].split("/").pop() || "Client"));
-    state.logos.logos.push({ name: name, src: url });
     input.value = "";
-    renderLogoList(state.logos.logos.length - 1);
-    changed();
+    var isSvg = /\.svg(\?|#|$)/i.test(url);
+    var source = isSvg ? fetch(url).then(function (r) { return r.text(); }).then(function (t) { return { isSvg: true, svgText: t }; })
+                       : Promise.resolve({ isSvg: false, src: url });
+    source.then(function (s) { return importLogo(name, s); }).then(function (item) {
+      addLogoItems([item]);
+      toast("Logo added — background removed.");
+    }).catch(function () {
+      // that site doesn't allow copying the image — link to it directly instead
+      addLogoItems([{ name: name, src: url }]);
+      toast("Added as a link (that site doesn't allow clean-up).");
+    });
   });
 
   /* ---------------- settings forms ---------------- */
@@ -987,6 +1324,7 @@
     box.innerHTML = "";
     box.appendChild(row("Section colour", "Light for grey/white sections, dark for black", pick(s, "theme", [["light", "Light"], ["dark", "Dark"]])));
     box.appendChild(row("Videos across on desktop", "Phones always show one at a time", pick(s, "perViewDesktop", [[2, "2"], [3, "3"], [4, "4"]])));
+    box.appendChild(row("Play videos in", "Instagram posts always open in the pop-up", pick(s, "playIn", [["popup", "Pop-up"], ["card", "The card"]])));
     box.appendChild(row("Endless loop", "Keeps going round instead of stopping at the last video", toggle(s, "loop")));
     box.appendChild(row("Soft covers", "Covers slightly muted until hovered", toggle(s, "softThumbnails")));
     box.appendChild(row("Edge-to-edge on phones", "Videos slide in from the screen edge on mobile", toggle(s, "edgeToEdge")));
@@ -1022,6 +1360,7 @@
     if (anim === "glide" || anim === "step") {
       box.appendChild(row("Direction", null, pick(s, "direction", [["left", "← Left"], ["right", "Right →"]])));
     }
+    box.appendChild(row("Auto-size logos", "Evens out wide wordmarks and square icons so they all look the same size", toggle(s, "autoSize")));
     box.appendChild(row("Logo size", null, slider(s, "logoHeight", 24, 80, 2, function (v) { return v + "px"; })));
     box.appendChild(row("Max logo width", "Stops long wordmarks getting huge", slider(s, "logoMaxWidth", 80, 260, 10, function (v) { return v + "px"; })));
     box.appendChild(row("Space between", null, slider(s, "gap", 32, 160, 4, function (v) { return v + "px"; })));

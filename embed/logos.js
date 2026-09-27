@@ -19,10 +19,10 @@
     ".ssl-heading span{transform:translateY(1px)}",
     ".ssl-viewport{overflow:hidden;padding:8px 0;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--ssl-fade),#000 calc(100% - var(--ssl-fade)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--ssl-fade),#000 calc(100% - var(--ssl-fade)),transparent)}",
     ".ssl-root.ssl-no-fade .ssl-viewport{-webkit-mask-image:none;mask-image:none}",
-    ".ssl-track{display:flex;width:max-content;will-change:transform}",
+    ".ssl-track{display:flex;align-items:center;width:max-content;will-change:transform}",
     ".ssl-set{display:flex;align-items:center;flex-shrink:0}",
-    ".ssl-root .ssl-item{display:flex;align-items:center;justify-content:center;padding:0 calc(var(--ssl-gap) / 2);flex-shrink:0;text-decoration:none!important;border:0}",
-    ".ssl-root .ssl-item img{display:block;height:var(--ssl-height);width:auto;max-width:var(--ssl-max-width);margin:0;object-fit:contain;filter:grayscale(var(--ssl-gray)) contrast(1.05);opacity:var(--ssl-opacity);transition:filter .5s ease,opacity .5s ease;-webkit-user-drag:none;user-select:none}",
+    ".ssl-root .ssl-item{display:flex;align-items:center;justify-content:center;align-self:center;line-height:0;padding:0 calc(var(--ssl-gap) / 2);flex-shrink:0;text-decoration:none!important;border:0}",
+    ".ssl-root .ssl-item img{display:block;height:var(--ssl-h,var(--ssl-height));width:auto;max-width:var(--ssl-max-width);margin:0;object-fit:contain;filter:grayscale(var(--ssl-gray)) contrast(1.05);opacity:var(--ssl-opacity);transition:filter .5s ease,opacity .5s ease;-webkit-user-drag:none;user-select:none}",
     ".ssl-root.ssl-mono .ssl-item img{filter:grayscale(1) brightness(0)}",
     ".ssl-root.ssl-mono.ssl-dark .ssl-item img{filter:grayscale(1) brightness(0) invert(1)}",
     "@media (hover:hover){.ssl-root.ssl-hover .ssl-item:hover img{filter:none;opacity:1}}",
@@ -37,7 +37,7 @@
     ".ssl-slot.is-out{opacity:0;transform:translateY(6px);filter:blur(3px)}",
     ".ssl-root .ssl-slot .ssl-item{padding:0 8px}",
     ".ssl-empty{padding:30px 0;text-align:center;opacity:.5;font-size:14px}",
-    "@media (max-width:640px){.ssl-root{--ssl-gap:48px!important;--ssl-fade:10%}.ssl-root .ssl-item img{height:calc(var(--ssl-height) * .78);max-width:calc(var(--ssl-max-width) * .8)}.ssl-heading{font-size:13px;gap:12px;margin-bottom:22px}}"
+    "@media (max-width:640px){.ssl-root{--ssl-gap:48px!important;--ssl-fade:10%}.ssl-root .ssl-item img{height:calc(var(--ssl-h,var(--ssl-height)) * .78);max-width:calc(var(--ssl-max-width) * .8)}.ssl-heading{font-size:13px;gap:12px;margin-bottom:22px}}"
   ].join("\n");
 
   function ensureAssets() {
@@ -74,7 +74,7 @@
     var S = Object.assign({
       heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55,
       colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140,
-      gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3
+      gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3, autoSize: true
     }, (data && data.settings) || {});
     if (root.dataset.theme) S.theme = root.dataset.theme;
     if (root.dataset.style) S.style = root.dataset.style;
@@ -131,14 +131,89 @@
         item.setAttribute("aria-label", logo.name || "Client");
       }
       var img = document.createElement("img");
-      img.src = logo.preview || resolve(logo.src, opts.base);
+      var src = logo.preview || resolve(logo.src, opts.base);
+      // ask for permission to read the pixels (needed for trimming); if the host refuses, load it plainly
+      if (!/^data:/.test(src)) {
+        img.crossOrigin = "anonymous";
+        img.setAttribute("data-cors", "1");
+        img.addEventListener("error", function retry() {
+          img.removeEventListener("error", retry);
+          img.removeAttribute("crossorigin");
+          img.setAttribute("data-no-trim", "1");
+          img.src = src + (src.indexOf("?") > -1 ? "&" : "?") + "plain";
+        });
+      }
+      img.src = src;
       img.alt = logo.name || "";
       img.decoding = "async";
       img.draggable = false;
+      if (logo.ink) img.setAttribute("data-ink", logo.ink);
       item.appendChild(img);
       original.appendChild(item);
     });
     track.appendChild(original);
+
+    /* Auto-size: logos come in every shape, so one fixed height makes square icons look
+       huge and long wordmarks look tiny. Each logo's height is adjusted by its shape (and,
+       when known, how bold it is) so they all carry the same visual weight. */
+    function balance() {
+      if (!S.autoSize) return;
+      Array.prototype.forEach.call(original.querySelectorAll("img"), function (img) {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        if (!w || !h) return;
+        var k = Math.pow(2.5 / (w / h), 0.4);                   // wider → a bit shorter, squarer → a bit taller
+        var ink = +img.getAttribute("data-ink");
+        if (ink > 0) k *= Math.min(1.2, Math.max(0.85, Math.pow(0.35 / ink, 0.2))); // heavy solid marks → a touch smaller
+        k = Math.min(1.5, Math.max(0.55, k));
+        img.style.setProperty("--ssl-h", (S.logoHeight * k).toFixed(1) + "px");
+      });
+    }
+    /* Trim: many logo files have empty space baked in around the artwork, which makes them
+       look off-centre and unevenly spaced. Crop every logo to its visible pixels so the
+       spacing between logos is truly even and they all centre on the same line. */
+    function loaded(img) {
+      return img.complete && img.naturalWidth ? Promise.resolve() : new Promise(function (res) {
+        function done() { img.removeEventListener("load", done); img.removeEventListener("error", fail); res(); }
+        var errors = 0;
+        // a CORS-refused image gets one plain retry (see makeSet) — wait for that before giving up
+        function fail() { if (++errors >= 2 || !img.hasAttribute("data-cors")) done(); }
+        img.addEventListener("load", done);
+        img.addEventListener("error", fail);
+      });
+    }
+    function tidy(img) {
+      if (img.hasAttribute("data-no-trim") || img.hasAttribute("data-trimmed")) return Promise.resolve();
+      var w = img.naturalWidth || 300, h = img.naturalHeight || 150;
+      var k = Math.min(1, 1200 / w, 480 / h);
+      if (/\.svg|image\/svg/i.test(img.src)) k = Math.min(1200 / w, 480 / h); // vectors: render crisply
+      var cw = Math.max(1, Math.round(w * k)), ch = Math.max(1, Math.round(h * k));
+      try {
+        var c = document.createElement("canvas");
+        c.width = cw; c.height = ch;
+        var ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, cw, ch);
+        var d = ctx.getImageData(0, 0, cw, ch).data;
+        var x0 = cw, y0 = ch, x1 = -1, y1 = -1;
+        for (var y = 0; y < ch; y++) for (var x = 0; x < cw; x++) {
+          if (d[(y * cw + x) * 4 + 3] > 12) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        }
+        img.setAttribute("data-trimmed", "1");
+        if (x1 < 0) return Promise.resolve();
+        var tw = x1 - x0 + 1, th = y1 - y0 + 1;
+        if (tw * th > cw * ch * 0.97) return Promise.resolve(); // already tight
+        var out = document.createElement("canvas");
+        out.width = tw; out.height = th;
+        out.getContext("2d").drawImage(c, x0, y0, tw, th, 0, 0, tw, th);
+        img.removeAttribute("crossorigin");
+        img.src = out.toDataURL("image/png");
+        return loaded(img);
+      } catch (e) {
+        return Promise.resolve(); // pixels not readable — show as is
+      }
+    }
+    var imagesSettled = Promise.all(Array.prototype.map.call(original.querySelectorAll("img"), function (img) {
+      return loaded(img).then(function () { return tidy(img); });
+    })).then(balance);
 
     var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
     var mode = root.dataset.animation || S.animation || "glide";
@@ -152,12 +227,7 @@
     cleanups.push(function () { dead = true; });
 
     /* ---------- shared helpers ---------- */
-    function whenImagesReady(cb) {
-      var imgs = Array.prototype.slice.call(original.querySelectorAll("img"));
-      Promise.all(imgs.map(function (img) {
-        return img.complete ? null : new Promise(function (res) { img.onload = img.onerror = res; });
-      })).then(function () { if (!dead) cb(); });
-    }
+    function whenImagesReady(cb) { imagesSettled.then(function () { if (!dead) cb(); }); }
     function watchResize(cb) {
       var t;
       function later() { clearTimeout(t); t = setTimeout(function () { if (!dead) cb(); }, 120); }
@@ -368,6 +438,7 @@
       }
       cleanups.push(function () { clearTimeout(timer); });
       build();
+      whenImagesReady(function () { slots = []; perRow = 0; build(); });
       timer = setTimeout(cycle, interval);
       watchResize(build);
       watchHover();

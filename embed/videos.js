@@ -74,6 +74,11 @@
     ".ssv-modal-frame iframe{position:relative;display:block;width:100%;height:640px;height:min(720px,calc(100dvh - 140px));border:0;background:transparent}",
     ".ssv-modal .ssv-modal-link{align-self:center;color:rgba(250,250,250,.75);font-size:13px;font-weight:500;text-decoration:none;border-bottom:1px solid rgba(250,250,250,.3);padding-bottom:1px}",
     ".ssv-modal .ssv-modal-link:hover{color:#fafafa;border-color:#fafafa}",
+    ".ssv-modal[data-kind=video] .ssv-modal-box{width:min(1120px,100%,calc((100vh - 130px) * 16 / 9));width:min(1120px,100%,calc((100dvh - 130px) * 16 / 9))}",
+    ".ssv-modal[data-kind=video] .ssv-modal-frame{flex:none;aspect-ratio:16/9;overflow:hidden;background:#000}",
+    ".ssv-modal[data-kind=video] .ssv-modal-frame::before{color:rgba(255,255,255,.45)}",
+    ".ssv-modal[data-kind=video] .ssv-modal-frame iframe,.ssv-modal[data-kind=video] .ssv-modal-frame video{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent}",
+    ".ssv-modal-link[hidden]{display:none}",
     "@media (max-width:640px){.ssv-modal{padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}.ssv-modal-box{max-height:calc(100dvh - 24px);gap:10px}.ssv-modal-frame{border-radius:16px}.ssv-modal-title{font-size:15px}}",
     "@media (prefers-reduced-motion:reduce){.ssv-modal,.ssv-modal-box{transition:none}}",
     ".ssv-empty{padding:40px 0;text-align:center;color:var(--ssv-muted);font-size:14px}",
@@ -117,17 +122,40 @@
     return BASE + src.replace(/^\.?\//, "");
   }
 
-  /* ---------- Instagram pop-up (posts are tall, so they open over the page) ---------- */
+  function makePlayer(item, info) {
+    var player;
+    if (info.type === "file") {
+      player = document.createElement("video");
+      player.src = info.src;
+      player.controls = true;
+      player.autoplay = true;
+      player.playsInline = true;
+    } else {
+      player = document.createElement("iframe");
+      player.src = info.type === "youtube"
+        ? "https://www.youtube-nocookie.com/embed/" + info.id + "?autoplay=1&rel=0&playsinline=1&modestbranding=1"
+        : info.type === "vimeo"
+          ? "https://player.vimeo.com/video/" + info.id + "?autoplay=1&dnt=1&byline=0&portrait=0&title=0" + (info.hash ? "&h=" + info.hash : "")
+          : info.src;
+      player.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media";
+      player.allowFullscreen = true;
+      player.title = item.title || "Video";
+    }
+    return player;
+  }
+
+  /* ---------- pop-up player: widescreen for videos, tall for Instagram ---------- */
   var modal = null, modalFrame = null, modalReturn = null, savedOverflow = "";
   var IG_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" class="dot"/></svg>';
   function closeModal() {
     if (!modal || !modal.classList.contains("is-open")) return;
     modal.classList.remove("is-open");
     document.documentElement.style.overflow = savedOverflow;
+    if (modal.getAttribute("data-kind") === "video") modalFrame.innerHTML = ""; // stop the sound straight away
     setTimeout(function () { if (!modal.classList.contains("is-open")) { modal.hidden = true; modalFrame.innerHTML = ""; } }, 350);
     if (modalReturn && modalReturn.focus) modalReturn.focus();
   }
-  function openInstagram(item, info, trigger) {
+  function openModal(item, info, trigger) {
     if (!modal) {
       modal = document.createElement("div");
       modal.className = "ssv-modal";
@@ -139,7 +167,7 @@
           '<div class="ssv-modal-bar"><span class="ssv-modal-title"></span>' +
           '<button type="button" class="ssv-modal-close" aria-label="Close"><span>Close</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
           '<div class="ssv-modal-frame"></div>' +
-          '<a class="ssv-modal-link" target="_blank" rel="noopener">Open on Instagram ↗</a>' +
+          '<a class="ssv-modal-link" target="_blank" rel="noopener"></a>' +
         '</div>';
       document.body.appendChild(modal);
       modalFrame = modal.querySelector(".ssv-modal-frame");
@@ -157,16 +185,28 @@
         } catch (x) {}
       });
     }
-    modal.querySelector(".ssv-modal-title").textContent = item.title || (info.kind === "reel" ? "Instagram reel" : "Instagram post");
-    modal.querySelector(".ssv-modal-link").href = "https://www.instagram.com/" + (info.kind === "reel" ? "reel" : "p") + "/" + info.code + "/";
-    modal.setAttribute("aria-label", item.title || "Instagram post");
-    var frame = document.createElement("iframe");
-    frame.src = "https://www.instagram.com/p/" + info.code + "/embed/";
-    frame.title = item.title || "Instagram post";
-    frame.allow = "autoplay; encrypted-media; picture-in-picture; clipboard-write";
-    frame.setAttribute("scrolling", "no");
+    var ig = info.type === "instagram";
+    var link = modal.querySelector(".ssv-modal-link"), content;
+    modal.setAttribute("data-kind", ig ? "instagram" : "video");
+    modal.querySelector(".ssv-modal-title").textContent = item.title || (ig ? (info.kind === "reel" ? "Instagram reel" : "Instagram post") : "");
+    modal.setAttribute("aria-label", item.title || (ig ? "Instagram post" : "Video"));
+    if (ig) {
+      content = document.createElement("iframe");
+      content.src = "https://www.instagram.com/p/" + info.code + "/embed/";
+      content.title = item.title || "Instagram post";
+      content.allow = "autoplay; encrypted-media; picture-in-picture; clipboard-write";
+      content.setAttribute("scrolling", "no");
+      link.href = "https://www.instagram.com/" + (info.kind === "reel" ? "reel" : "p") + "/" + info.code + "/";
+      link.textContent = "Open on Instagram ↗";
+    } else {
+      content = makePlayer(item, info);
+      var site = info.type === "youtube" ? "YouTube" : info.type === "vimeo" ? "Vimeo" : "";
+      link.href = site ? item.video : "";
+      link.textContent = site ? "Watch on " + site + " ↗" : "";
+    }
+    link.hidden = !link.textContent;
     modalFrame.innerHTML = "";
-    modalFrame.appendChild(frame);
+    modalFrame.appendChild(content);
     modalReturn = trigger;
     savedOverflow = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
@@ -204,7 +244,7 @@
     var cleanups = [];
     root._ssCleanup = function () { cleanups.forEach(function (f) { f(); }); };
 
-    var settings = Object.assign({ theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, loop: true }, (data && data.settings) || {});
+    var settings = Object.assign({ theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, loop: true, playIn: "popup" }, (data && data.settings) || {});
     if (root.dataset.theme) settings.theme = root.dataset.theme;
     if (root.dataset.perView) settings.perViewDesktop = +root.dataset.perView;
     var videos = ((data && data.videos) || []).filter(function (v) { return v && v.video; });
@@ -244,26 +284,8 @@
     function play(item, info, media) {
       stopPlaying();
       var saved = Array.prototype.slice.call(media.childNodes);
-      var player;
-      if (info.type === "file") {
-        player = document.createElement("video");
-        player.src = info.src;
-        player.controls = true;
-        player.autoplay = true;
-        player.playsInline = true;
-      } else {
-        player = document.createElement("iframe");
-        player.src = info.type === "youtube"
-          ? "https://www.youtube-nocookie.com/embed/" + info.id + "?autoplay=1&rel=0&playsinline=1&modestbranding=1"
-          : info.type === "vimeo"
-            ? "https://player.vimeo.com/video/" + info.id + "?autoplay=1&dnt=1&byline=0&portrait=0&title=0" + (info.hash ? "&h=" + info.hash : "")
-            : info.src;
-        player.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media";
-        player.allowFullscreen = true;
-        player.title = item.title || "Video";
-      }
       media.innerHTML = "";
-      media.appendChild(player);
+      media.appendChild(makePlayer(item, info));
       playing = { media: media, saved: saved };
     }
 
@@ -304,7 +326,7 @@
       btn.setAttribute("aria-label", "Play" + (item.title ? ": " + item.title : " video"));
       btn.innerHTML = '<span class="ssv-pill"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6a.6.6 0 0 0 .9.5l7.8-4.8a.6.6 0 0 0 0-1L3.4.7a.6.6 0 0 0-.9.5z"/></svg><span>' + (info.type === "instagram" && info.kind === "post" ? "View" : "Play") + '</span></span>';
       btn.addEventListener("click", function () {
-        if (info.type === "instagram") openInstagram(item, info, btn);
+        if (info.type === "instagram" || settings.playIn !== "card") openModal(item, info, btn);
         else play(item, info, media);
       });
       media.appendChild(btn);
