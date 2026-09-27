@@ -1,6 +1,6 @@
 {
   "settings": {
-    "heading": "Clients",
+    "heading": "Clients we've worked with",
     "theme": "light",
     "style": "grey",
     "greyscale": 100,
@@ -12,9 +12,7 @@
     "logoMaxWidth": 140,
     "gap": 80,
     "pauseOnHover": true,
-    "fadeEdges": true,
-    "animation": "glide",
-    "interval": 3
+    "fadeEdges": true
   },
   "logos": [
     {
