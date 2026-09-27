@@ -1,11 +1,9 @@
 {
   "settings": {
-    "theme": "light",
+    "theme": "dark",
     "perViewDesktop": 3,
-    "softThumbnails": false,
-    "openLinksInNewTab": true,
-    "edgeToEdge": true,
-    "loop": true
+    "softThumbnails": true,
+    "openLinksInNewTab": true
   },
   "videos": [
     {
