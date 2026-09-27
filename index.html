@@ -254,7 +254,7 @@
         <input class="input" id="addVideoUrl" type="url" inputmode="url" placeholder="Paste a YouTube, Vimeo or Instagram link…" required>
         <button class="btn btn-solid" type="submit"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Add</span></button>
       </form>
-      <p class="hint">YouTube and Vimeo titles fill in automatically. For Instagram, add a title and a cover picture. New videos go to the front.</p>
+      <p class="hint">YouTube and Vimeo titles fill in automatically; for Instagram just add a title — the cover is pulled in for you. New videos go to the front.</p>
     </div>
     <div class="panel">
       <div class="panel-head"><h2>Your videos</h2><span class="hint" id="videoHint">Drag or use the arrows</span></div>
@@ -403,8 +403,8 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
-  function clean(kind) {
-    var d = JSON.parse(JSON.stringify(state[kind]));
+  function clean(kind, source) {
+    var d = JSON.parse(JSON.stringify(source || state[kind]));
     if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; return o; });
     if (kind === "videos") d.videos = d.videos.map(function (v) {
       var o = { video: v.video, title: v.title || "", meta: v.meta || "" };
@@ -591,6 +591,7 @@
     });
     chain.then(function () {
       toast("Published! Your site will show the changes in about a minute.");
+      watchForCovers();
     }).catch(function (e) {
       var msg = e.status === 401 ? "GitHub didn't accept your token. Please connect again."
               : e.status === 403 || e.status === 404 ? "Your token can't write to " + cfg.repo + ". Check it has Contents: Read and write."
@@ -602,6 +603,39 @@
       btn.innerHTML = "<span>Publish</span>";
       refreshStatus();
     });
+  }
+
+  /* After publishing, GitHub fetches covers for Instagram items that don't have one
+     (see scripts/instagram-covers.mjs). Check back for a few minutes and bring them in. */
+  var coverWatch = null;
+  function missingIgCovers() {
+    return state.videos.videos.filter(function (v) { return parseVideo(v.video).type === "instagram" && !v.thumbnail && !v.preview; });
+  }
+  function watchForCovers() {
+    clearTimeout(coverWatch);
+    if (!cfg.token || !missingIgCovers().length) return;
+    var tries = 0;
+    (function check() {
+      coverWatch = setTimeout(function () {
+        if (!missingIgCovers().length || ++tries > 16) return;
+        getFile("data/videos.json").then(function (f) {
+          var fresh = JSON.parse(b64decodeText(f.content));
+          var byUrl = {};
+          (fresh.videos || []).forEach(function (v) { if (v.thumbnail) byUrl[v.video] = v.thumbnail; });
+          var wasClean = !isDirty("videos");
+          var added = 0;
+          missingIgCovers().forEach(function (v) { if (byUrl[v.video]) { v.thumbnail = byUrl[v.video]; added++; } });
+          if (added) {
+            remote.videos.sha = f.sha;
+            remote.videos.json = wasClean ? serialize("videos") : JSON.stringify(clean("videos", fresh), null, 2) + "\n";
+            // the site copy of the new cover appears once GitHub Pages redeploys — give it a moment
+            setTimeout(function () { renderVideoList(); changed(); }, 45000);
+            toast(added === 1 ? "Instagram cover pulled in ✓" : added + " Instagram covers pulled in ✓");
+          }
+          if (missingIgCovers().length) check();
+        }).catch(check);
+      }, 15000);
+    })();
   }
 
   /* ---------------- preview ---------------- */
@@ -777,7 +811,7 @@
       delete v.thumbnail; delete v.preview; delete v.pending;
       renderVideoList(i); changed();
     } }));
-    else if (isIg) kids.push(el("span", { class: "cover-hint", text: "Instagram needs a cover picture — a screenshot of the post works." }));
+    else if (isIg) kids.push(el("span", { class: "cover-hint", text: "A cover is pulled from Instagram automatically after you publish (takes a minute or two). Or add your own." }));
     return el("div", { class: "cover-row" }, kids);
   }
   // resize covers to a sensible size for the web
@@ -823,7 +857,7 @@
       changed();
     }).catch(function () {});
     if (info.type === "instagram") {
-      toast("Instagram added — give it a title and a cover picture, then Publish.");
+      toast("Instagram added — give it a title, then Publish. The cover is pulled in automatically.");
       var t = $("#videoList .item .input.title");
       if (t) t.focus();
     } else toast("Added — edit the title if you like, then Publish.");
@@ -1106,6 +1140,7 @@
 
   Promise.all([loadKind("videos"), loadKind("logos")]).then(function () {
     if (restoreDraft()) toast("Restored your unpublished changes.");
+    if (!isDirty("videos")) watchForCovers();
     renderVideoList(); renderLogoList();
     renderVideoSettings(); renderLogoSettings();
     if (window.innerWidth < 700) $('#deviceSeg button[data-v="phone"]').click();

@@ -1,0 +1,51 @@
+name: Instagram covers
+
+# After the admin app publishes the video list, fetch a cover picture for any
+# Instagram post that doesn't have one yet.
+on:
+  push:
+    branches: [main]
+    paths: [data/videos.json]
+  workflow_dispatch:
+    inputs:
+      test_url:
+        description: "Instagram link to test (dry run — nothing is saved)"
+        required: false
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: instagram-covers
+  cancel-in-progress: false
+
+jobs:
+  covers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fetch missing covers
+        run: node scripts/instagram-covers.mjs
+        env:
+          TEST_URL: ${{ inputs.test_url }}
+      - name: Save covers
+        if: ${{ !inputs.test_url }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard covers)" ]; then
+            echo "No new covers."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add covers data/videos.json
+          git commit -m "Add Instagram covers"
+          git pull --rebase origin main
+          git push
+          # pushes made by Actions don't redeploy the site on their own
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || true
