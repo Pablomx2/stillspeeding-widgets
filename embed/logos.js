@@ -19,6 +19,8 @@
     ".ssl-heading span{transform:translateY(1px)}",
     ".ssl-viewport{overflow:hidden;padding:8px 0;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--ssl-fade),#000 calc(100% - var(--ssl-fade)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--ssl-fade),#000 calc(100% - var(--ssl-fade)),transparent)}",
     ".ssl-root.ssl-no-fade .ssl-viewport{-webkit-mask-image:none;mask-image:none}",
+    ".ssl-root.ssl-draggable .ssl-viewport{cursor:grab;touch-action:pan-y;-webkit-user-select:none;user-select:none}",
+    ".ssl-root.ssl-dragging .ssl-viewport{cursor:grabbing}",
     ".ssl-track{display:flex;align-items:center;width:max-content;will-change:transform}",
     ".ssl-set{display:flex;align-items:center;flex-shrink:0}",
     ".ssl-root .ssl-item{display:flex;align-items:center;justify-content:center;align-self:center;line-height:0;padding:0 calc(var(--ssl-gap) / 2 * var(--ssl-pr,1)) 0 calc(var(--ssl-gap) / 2 * var(--ssl-pl,1));flex-shrink:0;text-decoration:none!important;border:0}",
@@ -74,12 +76,12 @@
     var S = Object.assign({
       heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55,
       colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140,
-      gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3, autoSize: true
+      gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3, autoSize: true, draggable: true
     }, (data && data.settings) || {});
     if (root.dataset.theme) S.theme = root.dataset.theme;
     if (root.dataset.style) S.style = root.dataset.style;
     if (root.dataset.heading !== undefined) S.heading = root.dataset.heading;
-    var logos = ((data && data.logos) || []).filter(function (l) { return l && (l.src || l.preview); });
+    var logos = ((data && data.logos) || []).filter(function (l) { return l && (l.src || l.preview) && !l.hidden; });
 
     root.innerHTML = "";
     var wrap = document.createElement("div");
@@ -290,11 +292,78 @@
     }
     function watchHover(onIn, onOut) {
       if (!S.pauseOnHover) return;
-      viewport.addEventListener("mouseenter", function () { hovered = true; if (onIn) onIn(); });
-      viewport.addEventListener("mouseleave", function () { hovered = false; if (onOut) onOut(); });
+      viewport.addEventListener("pointerenter", function (e) { if (e.pointerType !== "mouse") return; hovered = true; if (onIn) onIn(); });
+      viewport.addEventListener("pointerleave", function (e) { if (e.pointerType !== "mouse") return; hovered = false; if (onOut) onOut(); });
       viewport.addEventListener("focusin", function () { hovered = true; if (onIn) onIn(); });
       viewport.addEventListener("focusout", function () { hovered = false; if (onOut) onOut(); });
     }
+    /* Drag with the mouse, swipe on touch, or scroll sideways on a trackpad.
+       h.start() → h.move(dx) … → h.settle(). A flick keeps gliding briefly (momentum). */
+    function makeDraggable(h) {
+      var st = { active: false };
+      if (S.draggable === false) return st;
+      wrap.classList.add("ssl-draggable");
+      var down = false, pid = null, startX = 0, lastX = 0, lastT = 0, v = 0, dragged = false, momentumId = 0, wheelTimer = null;
+      function begin() { st.active = true; cancelAnimationFrame(momentumId); clearTimeout(wheelTimer); h.start(); }
+      viewport.addEventListener("pointerdown", function (e) {
+        if (e.button !== 0) return;
+        down = true; pid = e.pointerId; dragged = false;
+        startX = lastX = e.clientX; lastT = e.timeStamp; v = 0;
+        if (st.active) { cancelAnimationFrame(momentumId); } // catch a logo mid-glide
+      });
+      viewport.addEventListener("pointermove", function (e) {
+        if (!down || e.pointerId !== pid) return;
+        if (!dragged) {
+          if (Math.abs(e.clientX - startX) < 6) return;
+          dragged = true;
+          if (!st.active) begin(); else h.start();
+          try { viewport.setPointerCapture(pid); } catch (x) {}
+          wrap.classList.add("ssl-dragging");
+        }
+        var dx = e.clientX - lastX, dt = Math.max(1, e.timeStamp - lastT);
+        v = 0.75 * (dx / dt) + 0.25 * v;
+        lastX = e.clientX; lastT = e.timeStamp;
+        h.move(dx);
+      });
+      function up(e) {
+        if (!down || e.pointerId !== pid) return;
+        down = false;
+        if (!dragged) { if (st.active) { st.active = false; h.settle(); } return; }
+        wrap.classList.remove("ssl-dragging");
+        if (e.timeStamp - lastT > 90) v = 0; // held still before letting go → no flick
+        v = Math.max(-4, Math.min(4, v));
+        var last = null, began = performance.now();
+        function finish() { cancelAnimationFrame(momentumId); clearTimeout(safety); if (st.active) { st.active = false; h.settle(); } }
+        // the coast never runs longer than 1.2s, even if the page is in a background tab
+        var safety = setTimeout(finish, 1200);
+        if (Math.abs(v) <= 0.02) { finish(); return; }
+        momentumId = requestAnimationFrame(function glide(now) {
+          if (dead) return;
+          if (last === null || now <= last) { last = now; momentumId = requestAnimationFrame(glide); return; }
+          var dt = Math.min(48, now - last);
+          last = now;
+          v *= Math.pow(0.94, dt / 16);
+          if (Math.abs(v) > 0.02 && performance.now() - began < 1200) { h.move(v * dt); momentumId = requestAnimationFrame(glide); }
+          else finish();
+        });
+      }
+      viewport.addEventListener("pointerup", up);
+      viewport.addEventListener("pointercancel", up);
+      // letting go after a drag shouldn't also open a logo's link
+      viewport.addEventListener("click", function (e) { if (dragged) { e.preventDefault(); e.stopPropagation(); dragged = false; } }, true);
+      viewport.addEventListener("dragstart", function (e) { e.preventDefault(); });
+      viewport.addEventListener("wheel", function (e) {
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical scrolling stays with the page
+        e.preventDefault();
+        if (!st.active) begin();
+        h.move(-e.deltaX);
+        clearTimeout(wheelTimer);
+        wheelTimer = setTimeout(function () { st.active = false; h.settle(); }, 200);
+      }, { passive: false });
+      cleanups.push(function () { cancelAnimationFrame(momentumId); clearTimeout(wheelTimer); });
+      return st;
+    }
+
     // repeat the logo set enough times to fill the strip; returns the width of one set
     function fillClones() {
       while (track.children.length > 1) track.removeChild(track.lastChild);
@@ -384,9 +453,27 @@
         })(start);
       }
 
+      var sign = right ? 1 : -1;
+      var drag = makeDraggable({
+        start: function () { cancelGlide(); rate = 0; if (anim) anim.pause(); },
+        move: function (dx) {
+          if (!anim || !lastSet) return;
+          var D = anim.effect.getTiming().duration;
+          var t = (anim.currentTime || 0) + sign * dx * D / lastSet;
+          anim.currentTime = ((t % D) + D) % D;
+        },
+        settle: function () {
+          if (!anim) return;
+          rate = 0;
+          anim.playbackRate = 0;
+          if (onScreen) anim.play();
+          if (!hovered) glideToSpeed(); // still under the mouse → stay put until it leaves
+        }
+      });
+
       whenImagesReady(layout);
       watchResize(layout);
-      watchHover(glideToStop, glideToSpeed);
+      watchHover(function () { if (!drag.active) glideToStop(); }, function () { if (!drag.active) glideToSpeed(); });
       watchScreen(function () { if (anim && !driving) onScreen ? anim.play() : anim.pause(); });
     }
 
@@ -422,6 +509,37 @@
           timer = setTimeout(move, interval);
         };
       }
+      var pos = 0;
+      function currentX() {
+        var m = getComputedStyle(track).transform;
+        if (!m || m === "none") return 0;
+        try { return new DOMMatrixReadOnly(m).m41; } catch (e) { return 0; }
+      }
+      function wrapX(x) { var W = offsets[n]; if (!W) return x; while (x > 0) x -= W; while (x <= -W) x += W; return x; }
+      makeDraggable({
+        start: function () {
+          clearTimeout(timer);
+          pos = currentX();
+          if (anim) { anim.cancel(); anim = null; }
+          track.style.transform = tx(pos);
+        },
+        move: function (dx) { if (!offsets.length) return; pos = wrapX(pos + dx); track.style.transform = tx(pos); },
+        settle: function () {
+          if (!offsets.length) return;
+          var best = 0;
+          for (var i = 1; i <= n; i++) if (Math.abs(-offsets[i] - pos) < Math.abs(-offsets[best] - pos)) best = i;
+          anim = track.animate([{ transform: tx(pos) }, { transform: tx(-offsets[best]) }], { duration: 520, easing: EASE, fill: "forwards" });
+          anim.onfinish = function () {
+            idx = best;
+            if (!right && idx >= n) idx = 0;
+            if (right && idx <= 0) idx = n;
+            track.style.transform = tx(-offsets[idx]);
+            if (anim) anim.cancel();
+            anim = null;
+            timer = setTimeout(move, interval);
+          };
+        }
+      });
       cleanups.push(function () { clearTimeout(timer); if (anim) anim.cancel(); });
       whenImagesReady(function () { measure(); timer = setTimeout(move, interval); });
       watchResize(measure);

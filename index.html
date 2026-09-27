@@ -52,6 +52,10 @@
   .icon-btn:hover:not(:disabled) { border-color: var(--ink); }
   .icon-btn.danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
   .icon-btn:disabled { opacity: .3; cursor: default; }
+  .icon-btn.on { background: #000; border-color: #000; color: #fff; }
+  .is-hidden .thumb, .is-hidden .logo-img img, .is-hidden .fields > :not(.cover-row), .logo-card.is-hidden > .input { opacity: .45; }
+  .hidden-tag { position: absolute; top: 6px; right: 6px; background: #000; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 300px; }
+  .thumb .hidden-tag { opacity: 1; }
 
   /* ---------- tabs ---------- */
   .tabs { max-width: 1400px; margin: 0 auto; padding: 18px 20px 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
@@ -207,6 +211,36 @@
   .dlg-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
   .error { color: var(--danger); font-size: 13px; font-weight: 600; }
 
+  /* ---------- password lock ---------- */
+  body.booting > :not(.lock):not(script) { visibility: hidden; }
+  body.locked > :not(.lock):not(script):not(.toast) { display: none !important; }
+  .lock { position: fixed; inset: 0; z-index: 100; background: #000; color: var(--paper); display: grid; place-items: center; padding: 24px; }
+  .lock-card { width: min(360px, 100%); display: grid; gap: 14px; justify-items: center; text-align: center; }
+  .lock-card h1 { font-family: var(--head); font-weight: 400; font-size: 30px; text-transform: uppercase; margin: 6px 0 0; }
+  .lock-card p { margin: 0; font-size: 14px; opacity: .7; }
+  .lock-card .input { height: 50px; border-radius: 300px; padding: 0 20px; text-align: center; font-size: 16px; }
+  .lock-card .btn { width: 100%; height: 50px; background: var(--paper); color: #000; border-color: var(--paper); }
+  .lock-card .badge { width: 56px; height: 56px; font-size: 20px; }
+  .lock-card .error { color: #ff8a80; }
+  .lock-foot { font-size: 12px !important; opacity: .45 !important; margin-top: 10px !important; }
+  .lock-foot code { font-size: 11px; }
+  .lock-card.shake { animation: shake .4s; }
+  @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+  .pw-form { display: grid; gap: 10px; margin-top: 12px; max-width: 420px; }
+
+  /* ---------- cover editor ---------- */
+  #coverDlg { width: min(720px, calc(100vw - 24px)); }
+  .cover-frame { position: relative; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; background: #111; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+  .cover-frame:focus-visible { box-shadow: 0 0 0 3px #000; }
+  .cover-frame.dragging { cursor: grabbing; }
+  .cover-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; max-width: none; }
+  .cover-grid { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .2s; background:
+      linear-gradient(to right, transparent calc(33.33% - .5px), rgba(255,255,255,.5) calc(33.33% - .5px), rgba(255,255,255,.5) calc(33.33% + .5px), transparent calc(33.33% + .5px), transparent calc(66.66% - .5px), rgba(255,255,255,.5) calc(66.66% - .5px), rgba(255,255,255,.5) calc(66.66% + .5px), transparent calc(66.66% + .5px)),
+      linear-gradient(to bottom, transparent calc(33.33% - .5px), rgba(255,255,255,.5) calc(33.33% - .5px), rgba(255,255,255,.5) calc(33.33% + .5px), transparent calc(33.33% + .5px), transparent calc(66.66% - .5px), rgba(255,255,255,.5) calc(66.66% - .5px), rgba(255,255,255,.5) calc(66.66% + .5px), transparent calc(66.66% + .5px)); }
+  .cover-frame.dragging .cover-grid { opacity: 1; }
+  .cover-hint { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); background: rgba(0,0,0,.7); color: #fff; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 300px; pointer-events: none; transition: opacity .3s; white-space: nowrap; }
+  .cover-hint.gone { opacity: 0; }
+
   /* ---------- toast ---------- */
   .toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translate(-50%, 30px); opacity: 0; background: #000; color: #fff; padding: 12px 20px; border-radius: 300px; font-size: 14px; font-weight: 500; z-index: 50; pointer-events: none; transition: opacity .25s, transform .3s cubic-bezier(.2,.7,.2,1); max-width: calc(100vw - 32px); text-align: center; }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -231,7 +265,7 @@
     .item { grid-template-columns: 128px minmax(0, 1fr); gap: 10px; padding: 12px; }
     .item .handle { display: none; }
     .item .thumb { width: 128px; grid-row: 1; grid-column: 1; }
-    .item .actions { grid-row: 1; grid-column: 2; display: flex; justify-content: flex-end; align-self: start; gap: 6px; }
+    .item .actions { grid-row: 1; grid-column: 2; display: flex; flex-wrap: wrap; justify-content: flex-end; align-self: start; gap: 6px; }
     .item .fields { grid-row: 2; grid-column: 1 / -1; }
     .row { grid-template-columns: 1fr; }
     .add-bar { flex-direction: column; }
@@ -245,7 +279,18 @@
   @media (max-width: 380px) { .logo-grid { grid-template-columns: minmax(0, 1fr); } }
 </style>
 </head>
-<body>
+<body class="booting">
+<div class="lock" id="lockScreen" hidden>
+  <form class="lock-card" id="lockForm" autocomplete="off">
+    <div class="badge">SS</div>
+    <h1>Widgets</h1>
+    <p>This app is password protected.</p>
+    <input class="input" id="lockInput" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password" required>
+    <button class="btn btn-solid" type="submit" id="lockBtn"><span>Unlock</span></button>
+    <div class="error" id="lockErr" hidden></div>
+    <p class="lock-foot">Forgot it? Delete <code>data/admin-lock.json</code> in your GitHub repository to remove the password.</p>
+  </form>
+</div>
 
 <header class="top">
   <div class="top-in">
@@ -362,6 +407,20 @@
       <div class="code-wrap"><pre class="code" id="codeLogos"></pre><button class="btn btn-sm" data-copy="codeLogos"><span>Copy</span></button></div>
     </div>
     <div class="panel">
+      <h3>Password</h3>
+      <p class="hint" id="pwInfo"></p>
+      <form id="pwForm" class="pw-form" autocomplete="off" hidden>
+        <input class="input" id="pwNew" type="password" placeholder="New password (at least 8 characters)" autocomplete="new-password" minlength="8" required>
+        <input class="input" id="pwConfirm" type="password" placeholder="Type it again" autocomplete="new-password" minlength="8" required>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-solid" type="submit"><span>Save password</span></button>
+          <button class="btn btn-sm" type="button" id="pwCancel"><span>Cancel</span></button>
+        </div>
+        <div class="error" id="pwErr" hidden></div>
+      </form>
+      <div id="pwActions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"></div>
+    </div>
+    <div class="panel">
       <h3>GitHub connection</h3>
       <p class="hint" id="connInfo"></p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
@@ -400,6 +459,27 @@
   </form>
 </dialog>
 
+<dialog id="coverDlg">
+  <div class="dlg">
+    <h2>Adjust cover</h2>
+    <p class="hint" style="margin:0">Drag the picture to choose what shows in the card. Use the slider to zoom in.</p>
+    <div class="cover-frame" id="coverFrame" tabindex="0" aria-label="Cover framing — drag, or use the arrow keys">
+      <img id="coverImg" alt="" draggable="false">
+      <span class="cover-grid" aria-hidden="true"></span>
+      <span class="cover-hint" id="coverHint">Drag to reposition</span>
+    </div>
+    <div class="set-row">
+      <div class="lbl">Zoom</div>
+      <div class="range"><input type="range" id="coverZoom" min="1" max="2.5" step="0.01" aria-label="Zoom"><output id="coverZoomOut">100%</output></div>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn" type="button" id="coverReset" style="margin-right:auto"><span>Reset</span></button>
+      <button class="btn" type="button" id="coverCancel"><span>Cancel</span></button>
+      <button class="btn btn-solid" type="button" id="coverSave"><span>Save</span></button>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -410,7 +490,7 @@
   var DEFAULT_OWNER = "Pablomx2";
   var DEFAULT_REPO = "stillspeeding-widgets";
   var BRANCH = "main";
-  var LS = { token: "ssw-token", owner: "ssw-owner", repo: "ssw-repo", draft: "ssw-draft" };
+  var LS = { token: "ssw-token", owner: "ssw-owner", repo: "ssw-repo", draft: "ssw-draft", unlock: "ssw-unlock" };
 
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
@@ -436,11 +516,14 @@
 
   function clean(kind, source) {
     var d = JSON.parse(JSON.stringify(source || state[kind]));
-    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; ["ink", "cy", "el", "er"].forEach(function (k) { if (l[k] != null) o[k] = l[k]; }); return o; });
+    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; if (l.hidden) o.hidden = true; ["ink", "cy", "el", "er"].forEach(function (k) { if (l[k] != null) o[k] = l[k]; }); return o; });
     if (kind === "videos") d.videos = d.videos.map(function (v) {
       var o = { video: v.video, title: v.title || "", meta: v.meta || "" };
       if (v.link) { o.link = v.link; if (v.linkText) o.linkText = v.linkText; }
       if (v.thumbnail) o.thumbnail = v.thumbnail;
+      if (v.hidden) o.hidden = true;
+      if (v.coverPos) o.coverPos = v.coverPos;
+      if (v.coverZoom) o.coverZoom = v.coverZoom;
       return o;
     });
     return d;
@@ -473,6 +556,8 @@
     left: '<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
     right: '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
     x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    eye: '<svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    eyeOff: '<svg viewBox="0 0 24 24"><path d="M4 4l16 16M9.9 5.8A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 3.9M6.1 7.9C3.8 9.6 2.5 12 2.5 12S6 18.5 12 18.5c1.5 0 2.9-.4 4.1-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
     ig: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>',
     grip: '<svg viewBox="0 0 10 16"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg>'
   };
@@ -534,7 +619,7 @@
   /* ---------------- loading ---------------- */
   var FALLBACK = {
     videos: { settings: { theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, edgeToEdge: true, loop: true, playIn: "popup" }, videos: [] },
-    logos: { settings: { heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55, colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140, gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3, autoSize: true }, logos: [] }
+    logos: { settings: { heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55, colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140, gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3, autoSize: true, draggable: true }, logos: [] }
   };
 
   function loadKind(kind) {
@@ -589,8 +674,12 @@
     s.classList.toggle("saved", !dirty);
     $("#statusText").textContent = dirty ? "Unpublished changes" : "Up to date";
     $("#publishBtn").disabled = !dirty || publishing;
-    $("#countVideos").textContent = state.videos ? state.videos.videos.length : "";
-    $("#countLogos").textContent = state.logos ? state.logos.logos.length : "";
+    function countText(list) {
+      var hid = list.filter(function (x) { return x.hidden; }).length;
+      return (list.length - hid) + (hid ? " · " + hid + " hidden" : "");
+    }
+    $("#countVideos").textContent = state.videos ? countText(state.videos.videos) : "";
+    $("#countLogos").textContent = state.logos ? countText(state.logos.logos) : "";
     $("#connectBanner").hidden = !!cfg.token;
     saveDraft();
   }
@@ -697,7 +786,7 @@
     previewTimer = setTimeout(function () {
       if (!frameReady || tab === "install" || !state[tab]) return;
       var data = JSON.parse(JSON.stringify(state[tab]));
-      if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, ink: l.ink, cy: l.cy, el: l.el, er: l.er, src: l.preview || resolveSrc(l.src) }; });
+      if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, hidden: l.hidden, ink: l.ink, cy: l.cy, el: l.el, er: l.er, src: l.preview || resolveSrc(l.src) }; });
       if (tab === "videos") data.videos = data.videos.map(function (v) {
         var o = Object.assign({}, v);
         delete o.pending; delete o.preview;
@@ -764,7 +853,10 @@
   function setThumb(box, v) {
     var info = parseVideo(v.video);
     var cover = v.preview || (v.thumbnail && resolveSrc(v.thumbnail));
-    if (cover) box.style.backgroundImage = "url('" + cover.replace(/'/g, "%27") + "')";
+    if (cover) {
+      box.style.backgroundImage = "url('" + cover.replace(/'/g, "%27") + "')";
+      if (v.coverPos) box.style.backgroundPosition = v.coverPos;
+    }
     else if (info.type === "instagram") { box.classList.add("ig"); box.innerHTML = ICON.ig; }
     else if (info.type === "youtube") box.style.backgroundImage = "url('https://i.ytimg.com/vi/" + info.id + "/mqdefault.jpg')";
     else if (info.type === "vimeo") {
@@ -802,13 +894,15 @@
       var actions = el("div", { class: "actions" }, [
         el("button", { class: "icon-btn", type: "button", title: "Move up", "aria-label": "Move up", html: ICON.up, disabled: i === 0 ? "" : null, onclick: function () { move(vids, i, i - 1); renderVideoList(i - 1); changed(); } }),
         el("button", { class: "icon-btn", type: "button", title: "Move down", "aria-label": "Move down", html: ICON.down, disabled: i === vids.length - 1 ? "" : null, onclick: function () { move(vids, i, i + 1); renderVideoList(i + 1); changed(); } }),
+        hideButton(v, "video", renderVideoList, i),
         el("button", { class: "icon-btn danger", type: "button", title: "Remove", "aria-label": "Remove video", html: ICON.x, onclick: function () {
           if (!confirm("Remove “" + (v.title || "this video") + "”?")) return;
           vids.splice(i, 1); renderVideoList(); changed(); toast("Removed — press Publish to update your site.");
         } })
       ]);
       var handle = el("div", { class: "handle", html: ICON.grip, title: "Drag to reorder" });
-      var item = el("div", { class: "item" + (i === flashIndex ? " flash" : ""), "data-i": i }, [handle, thumb, fields, actions]);
+      if (v.hidden) thumb.appendChild(el("span", { class: "hidden-tag", text: "Hidden" }));
+      var item = el("div", { class: "item" + (i === flashIndex ? " flash" : "") + (v.hidden ? " is-hidden" : ""), "data-i": i }, [handle, thumb, fields, actions]);
       handle.addEventListener("mousedown", function () { item.draggable = true; });
       item.addEventListener("dragend", function () { item.draggable = false; });
       list.appendChild(item);
@@ -838,13 +932,101 @@
       ]),
       input
     ];
+    if (has) kids.splice(1, 0, el("button", { class: "btn btn-sm", type: "button", onclick: function () { openCoverEditor(v, i); } }, [
+      el("span", { text: "Adjust" })
+    ]));
     if (has) kids.push(el("button", { class: "link-btn", type: "button", text: "Remove cover", onclick: function () {
-      delete v.thumbnail; delete v.preview; delete v.pending;
+      delete v.thumbnail; delete v.preview; delete v.pending; delete v.coverPos; delete v.coverZoom;
       renderVideoList(i); changed();
     } }));
     else if (isIg) kids.push(el("span", { class: "cover-hint", text: "A cover is pulled from Instagram automatically after you publish (takes a minute or two). Or add your own." }));
     return el("div", { class: "cover-row" }, kids);
   }
+  /* Cover editor: pan (drag / arrow keys) and zoom. Saves an object-position ("x% y%")
+     and a zoom factor, rendered exactly the same way by the carousel. */
+  var coverEdit = null;
+  function openCoverEditor(v, i) {
+    var dlg = $("#coverDlg"), img = $("#coverImg"), frame = $("#coverFrame"), zoom = $("#coverZoom");
+    var st = { x: 50, y: 50, z: Math.max(1, +v.coverZoom || 1) };
+    var m = (v.coverPos || "").match(/([\d.]+)%\s+([\d.]+)%/);
+    if (m) { st.x = +m[1]; st.y = +m[2]; }
+    function apply() {
+      var p = st.x.toFixed(1) + "% " + st.y.toFixed(1) + "%";
+      img.style.objectPosition = p;
+      img.style.transformOrigin = p;
+      img.style.transform = "scale(" + st.z + ")";
+      zoom.value = st.z;
+      $("#coverZoomOut").textContent = Math.round(st.z * 100) + "%";
+    }
+    coverEdit = { v: v, i: i, st: st, apply: apply };
+    $("#coverHint").classList.remove("gone");
+    img.src = v.preview || resolveSrc(v.thumbnail);
+    apply();
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+    frame.focus();
+  }
+  (function () {
+    var frame = $("#coverFrame"), img = $("#coverImg"), dlg = $("#coverDlg");
+    var drag = null;
+    function clamp(v) { return Math.max(0, Math.min(100, v)); }
+    // how far (in screen px) the picture can travel on each axis at the current zoom
+    function travel() {
+      var fw = frame.clientWidth, fh = frame.clientHeight, nw = img.naturalWidth || fw, nh = img.naturalHeight || fh;
+      var s = Math.max(fw / nw, fh / nh), z = coverEdit.st.z;
+      return { x: nw * s * z - fw, y: nh * s * z - fh };
+    }
+    function nudge(dx, dy) {
+      var t = travel(), st = coverEdit.st;
+      if (t.x > 0.5) st.x = clamp(st.x - dx / t.x * 100);
+      if (t.y > 0.5) st.y = clamp(st.y - dy / t.y * 100);
+      coverEdit.apply();
+    }
+    frame.addEventListener("pointerdown", function (e) {
+      if (!coverEdit) return;
+      drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+      frame.setPointerCapture(e.pointerId);
+      frame.classList.add("dragging");
+      $("#coverHint").classList.add("gone");
+    });
+    frame.addEventListener("pointermove", function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      nudge(e.clientX - drag.x, e.clientY - drag.y);
+      drag.x = e.clientX; drag.y = e.clientY;
+    });
+    function end() { drag = null; frame.classList.remove("dragging"); }
+    frame.addEventListener("pointerup", end);
+    frame.addEventListener("pointercancel", end);
+    frame.addEventListener("keydown", function (e) {
+      var k = { ArrowLeft: [8, 0], ArrowRight: [-8, 0], ArrowUp: [0, 8], ArrowDown: [0, -8] }[e.key];
+      if (!k || !coverEdit) return;
+      e.preventDefault();
+      nudge(k[0], k[1]);
+    });
+    frame.addEventListener("wheel", function (e) {
+      if (!coverEdit) return;
+      e.preventDefault();
+      coverEdit.st.z = Math.max(1, Math.min(2.5, coverEdit.st.z - e.deltaY * 0.002));
+      coverEdit.apply();
+    }, { passive: false });
+    $("#coverZoom").addEventListener("input", function (e) { if (coverEdit) { coverEdit.st.z = +e.target.value; coverEdit.apply(); } });
+    $("#coverReset").addEventListener("click", function () { if (coverEdit) { coverEdit.st.x = 50; coverEdit.st.y = 50; coverEdit.st.z = 1; coverEdit.apply(); } });
+    $("#coverCancel").addEventListener("click", function () { dlg.close(); });
+    $("#coverSave").addEventListener("click", function () {
+      if (!coverEdit) return;
+      var v = coverEdit.v, st = coverEdit.st;
+      if (Math.abs(st.x - 50) < 0.05 && Math.abs(st.y - 50) < 0.05 && st.z === 1) { delete v.coverPos; delete v.coverZoom; }
+      else {
+        v.coverPos = st.x.toFixed(1) + "% " + st.y.toFixed(1) + "%";
+        if (st.z > 1.001) v.coverZoom = Math.round(st.z * 100) / 100; else delete v.coverZoom;
+      }
+      dlg.close();
+      renderVideoList(coverEdit.i);
+      changed();
+      toast("Cover framing saved — press Publish to update your site.");
+    });
+    dlg.addEventListener("close", function () { coverEdit = null; });
+  })();
+
   // resize covers to a sensible size for the web
   function prepareCover(file) {
     return readAsDataURL(file).then(function (dataUrl) {
@@ -894,6 +1076,22 @@
     } else toast("Added — edit the title if you like, then Publish.");
   });
 
+  // show/hide on the site without deleting
+  function hideButton(entry, label, rerender, i) {
+    return el("button", {
+      class: "icon-btn" + (entry.hidden ? " on" : ""), type: "button",
+      title: entry.hidden ? "Show on the site" : "Hide from the site",
+      "aria-label": (entry.hidden ? "Show " : "Hide ") + label, "aria-pressed": String(!!entry.hidden),
+      html: entry.hidden ? ICON.eyeOff : ICON.eye,
+      onclick: function () {
+        if (entry.hidden) delete entry.hidden; else entry.hidden = true;
+        rerender(i);
+        changed();
+        toast(entry.hidden ? "Hidden — it stays here but won't show on your site after you Publish." : "Visible again — Publish to show it on your site.");
+      }
+    });
+  }
+
   /* ---------------- logos ---------------- */
   function renderLogoList(flashIndex) {
     var list = $("#logoList");
@@ -903,9 +1101,10 @@
     logos.forEach(function (l, i) {
       var imgBox = el("div", { class: "logo-img checker", title: "Drag to reorder" }, [
         el("img", { src: l.preview || resolveSrc(l.src), alt: "" }),
-        l.pending ? el("span", { class: "new", text: "New" }) : null
+        l.pending ? el("span", { class: "new", text: "New" }) : null,
+        l.hidden ? el("span", { class: "hidden-tag", text: "Hidden" }) : null
       ]);
-      var card = el("div", { class: "logo-card" + (i === flashIndex ? " flash" : ""), "data-i": i }, [
+      var card = el("div", { class: "logo-card" + (i === flashIndex ? " flash" : "") + (l.hidden ? " is-hidden" : ""), "data-i": i }, [
         imgBox,
         backgroundControl(l, i, imgBox),
         el("input", { class: "input", type: "text", value: l.name || "", placeholder: "Client name", "aria-label": "Client name", oninput: function (e) { l.name = e.target.value; changed(); } }),
@@ -913,6 +1112,7 @@
         el("div", { class: "logo-actions" }, [
           el("button", { class: "icon-btn", type: "button", title: "Move earlier", "aria-label": "Move earlier", html: ICON.left, disabled: i === 0 ? "" : null, onclick: function () { move(logos, i, i - 1); renderLogoList(i - 1); changed(); } }),
           el("button", { class: "icon-btn", type: "button", title: "Move later", "aria-label": "Move later", html: ICON.right, disabled: i === logos.length - 1 ? "" : null, onclick: function () { move(logos, i, i + 1); renderLogoList(i + 1); changed(); } }),
+          hideButton(l, "logo", renderLogoList, i),
           el("button", { class: "icon-btn danger", type: "button", title: "Remove", "aria-label": "Remove logo", html: ICON.x, onclick: function () {
             if (!confirm("Remove " + (l.name || "this logo") + "?")) return;
             logos.splice(i, 1); renderLogoList(); changed(); toast("Removed — press Publish to update your site.");
@@ -1382,6 +1582,7 @@
     box.appendChild(row("Logo size", null, slider(s, "logoHeight", 24, 80, 2, function (v) { return v + "px"; })));
     box.appendChild(row("Max logo width", "Stops long wordmarks getting huge", slider(s, "logoMaxWidth", 80, 260, 10, function (v) { return v + "px"; })));
     box.appendChild(row("Space between", null, slider(s, "gap", 32, 160, 4, function (v) { return v + "px"; })));
+    if (anim === "glide" || anim === "step") box.appendChild(row("Let visitors swipe & drag", "Drag with the mouse, swipe on phones, or scroll sideways on a trackpad", toggle(s, "draggable")));
     if (anim !== "still") box.appendChild(row("Pause on hover", null, toggle(s, "pauseOnHover")));
     if (anim === "glide" || anim === "step") box.appendChild(row("Soft edges", "Fade the logos out at the sides", toggle(s, "fadeEdges")));
   }
@@ -1491,11 +1692,123 @@
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); if (!$("#publishBtn").disabled) publish(); }
   });
 
+  /* ---------------- password lock ----------------
+     The password itself is never stored: data/admin-lock.json holds a random salt and a slow
+     PBKDF2 hash of it. Unlocked devices remember that hash; changing the password (or
+     deleting the file on GitHub) resets every device. Publishing still needs the GitHub
+     token, so the lock keeps people out of the app, and the token keeps them off your site. */
+  var LOCK_PATH = "data/admin-lock.json", lock = null, lockSha = null;
+  function b64bytes(b64) { var bin = atob(b64), out = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+  function bytesB64(bytes) { var bin = ""; for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]); return btoa(bin); }
+  function derive(pw, saltB64, iterations) {
+    return crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]).then(function (key) {
+      return crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: b64bytes(saltB64), iterations: iterations }, key, 256);
+    }).then(function (bits) { return bytesB64(new Uint8Array(bits)); });
+  }
+  function loadLock() {
+    var viaApi = cfg.token ? getFile(LOCK_PATH).then(function (f) { lockSha = f.sha; return JSON.parse(b64decodeText(f.content)); }) : Promise.reject();
+    return viaApi.catch(function (e) {
+      if (e && e.status === 404) return null;
+      return fetch(LOCK_PATH + "?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; });
+    }).catch(function () { return null; }).then(function (l) { lock = l && l.hash && l.salt ? l : null; });
+  }
+  function isUnlocked() { return !lock || lsGet(LS.unlock) === lock.hash; }
+  function showLock() {
+    return new Promise(function (resolve) {
+      var screen = $("#lockScreen"), form = $("#lockForm"), input = $("#lockInput"), err = $("#lockErr"), fails = 0, waitUntil = 0;
+      document.body.classList.add("locked");
+      screen.hidden = false;
+      input.focus();
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (Date.now() < waitUntil) return;
+        var btn = $("#lockBtn");
+        btn.disabled = true;
+        derive(input.value, lock.salt, lock.iterations || 250000).then(function (h) {
+          btn.disabled = false;
+          if (h === lock.hash) {
+            lsSet(LS.unlock, lock.hash);
+            screen.hidden = true;
+            document.body.classList.remove("locked");
+            input.value = "";
+            resolve();
+            return;
+          }
+          fails++;
+          form.classList.remove("shake"); void form.offsetWidth; form.classList.add("shake");
+          input.select();
+          err.hidden = false;
+          if (fails >= 5) {
+            waitUntil = Date.now() + 30000;
+            err.textContent = "Too many tries — wait 30 seconds.";
+            setTimeout(function () { err.hidden = true; fails = 0; }, 30000);
+          } else err.textContent = "That's not it — try again.";
+        });
+      });
+    });
+  }
+
+  function renderPassword() {
+    var info = $("#pwInfo"), actions = $("#pwActions"), form = $("#pwForm");
+    actions.innerHTML = "";
+    form.hidden = true;
+    info.textContent = lock
+      ? "Password on ✓ — people need it to open this app. Your site isn't affected."
+      : "No password yet. Anyone who finds this page can look around (they still can't publish without your GitHub connection).";
+    function openForm() {
+      if (!cfg.token) { toast("Connect GitHub first — only you can set the password.", true); openConnect(); return; }
+      form.hidden = false; actions.innerHTML = ""; $("#pwErr").hidden = true; $("#pwNew").value = ""; $("#pwConfirm").value = ""; $("#pwNew").focus();
+    }
+    actions.appendChild(el("button", { class: "btn btn-sm" + (lock ? "" : " btn-solid"), type: "button", onclick: openForm }, [el("span", { text: lock ? "Change password" : "Set a password" })]));
+    if (lock) {
+      actions.appendChild(el("button", { class: "btn btn-sm", type: "button", onclick: function () {
+        if (!cfg.token) { toast("Connect GitHub first.", true); openConnect(); return; }
+        if (!confirm("Remove the password? Anyone with the link will be able to open this app again.")) return;
+        var go = lockSha ? Promise.resolve(lockSha) : getFile(LOCK_PATH).then(function (f) { return f.sha; });
+        go.then(function (sha) {
+          return api(contentsPath(LOCK_PATH), { method: "DELETE", body: { message: "Remove app password", sha: sha, branch: BRANCH } });
+        }).then(function () {
+          lock = null; lockSha = null; lsSet(LS.unlock, null); renderPassword(); toast("Password removed.");
+        }).catch(function (e) { toast("Couldn't remove it: " + e.message, true); });
+      } }, [el("span", { text: "Remove password" })]));
+      actions.appendChild(el("button", { class: "btn btn-sm", type: "button", onclick: function () {
+        lsSet(LS.unlock, null); location.reload();
+      } }, [el("span", { text: "Lock this device" })]));
+    }
+  }
+  $("#pwCancel").addEventListener("click", renderPassword);
+  $("#pwForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var pw = $("#pwNew").value, again = $("#pwConfirm").value, err = $("#pwErr");
+    err.hidden = true;
+    if (pw.length < 8) { err.hidden = false; err.textContent = "Use at least 8 characters."; return; }
+    if (pw !== again) { err.hidden = false; err.textContent = "The two passwords don't match."; return; }
+    var salt = bytesB64(crypto.getRandomValues(new Uint8Array(16))), iterations = 250000;
+    derive(pw, salt, iterations).then(function (hash) {
+      var next = { v: 1, salt: salt, iterations: iterations, hash: hash };
+      var sha = lockSha ? Promise.resolve(lockSha) : getFile(LOCK_PATH).then(function (f) { return f.sha; }, function () { return null; });
+      return sha.then(function (s) {
+        return putFile(LOCK_PATH, b64encodeText(JSON.stringify(next, null, 2) + "\n"), lock ? "Change app password" : "Set app password", s);
+      }).then(function (res) {
+        lock = next; lockSha = res.content && res.content.sha;
+        lsSet(LS.unlock, hash); // this device stays unlocked
+        renderPassword();
+        toast("Password saved. It takes effect in about a minute.");
+      });
+    }).catch(function (e2) { err.hidden = false; err.textContent = "Couldn't save it: " + e2.message; });
+  });
+
   /* ---------------- start ---------------- */
   sortable($("#videoList"), ".item", function () { return state.videos.videos; }, renderVideoList, false);
   sortable($("#logoList"), ".logo-card", function () { return state.logos.logos; }, renderLogoList, true);
 
-  Promise.all([loadKind("videos"), loadKind("logos")]).then(function () {
+  loadLock().then(function () {
+    document.body.classList.remove("booting");
+    return isUnlocked() ? null : showLock();
+  }).then(function () {
+    renderPassword();
+    return Promise.all([loadKind("videos"), loadKind("logos")]);
+  }).then(function () {
     if (restoreDraft()) toast("Restored your unpublished changes.");
     if (!isDirty("videos")) watchForCovers();
     renderVideoList(); renderLogoList();

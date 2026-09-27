@@ -26,14 +26,14 @@
     ".ssv-media{position:relative;aspect-ratio:16/9;border-radius:var(--ssv-radius);overflow:hidden;background:#111;isolation:isolate}",
     ".ssv-media img,.ssv-media iframe,.ssv-media video{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;margin:0;max-width:none}",
     ".ssv-media img,.ssv-media video{object-fit:cover}",
-    ".ssv-media img{opacity:0;transform:scale(1.02);transition:opacity .6s ease,transform .9s cubic-bezier(.2,.7,.2,1),filter .5s ease}",
+    ".ssv-media img{opacity:0;object-position:var(--ssv-pos,50% 50%);transform-origin:var(--ssv-pos,50% 50%);transform:scale(calc(var(--ssv-z,1) * 1.02));transition:opacity .6s ease,transform .9s cubic-bezier(.2,.7,.2,1),filter .5s ease}",
     ".ssv-media img.is-loaded{opacity:1}",
     ".ssv-root.ssv-soft .ssv-media img{filter:grayscale(.35)}",
     ".ssv-root .ssv-play{-webkit-appearance:none;appearance:none;position:absolute;inset:0;width:100%;height:100%;margin:0;border:0;border-radius:0;background:linear-gradient(to top,rgba(0,0,0,.35),rgba(0,0,0,0) 45%);cursor:pointer;display:flex;align-items:flex-end;justify-content:flex-start;padding:14px}",
     ".ssv-pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px 0 12px;border-radius:300px;background:#fafafa;color:#000;font-family:var(--ssv-head);font-size:15px;line-height:1;letter-spacing:.02em;text-transform:uppercase;transition:background .3s ease,color .3s ease,transform .4s cubic-bezier(.2,.7,.2,1)}",
     ".ssv-pill svg{width:12px;height:12px;fill:currentColor}",
     ".ssv-pill span{transform:translateY(1px)}",
-    "@media (hover:hover){.ssv-card:hover .ssv-media img{transform:scale(1.06);filter:grayscale(0)}.ssv-card:hover .ssv-pill{background:#000;color:#fafafa;transform:translateY(-2px)}}",
+    "@media (hover:hover){.ssv-card:hover .ssv-media img{transform:scale(calc(var(--ssv-z,1) * 1.06));filter:grayscale(0)}.ssv-card:hover .ssv-pill{background:#000;color:#fafafa;transform:translateY(-2px)}}",
     ".ssv-play:focus-visible{outline:3px solid #fafafa;outline-offset:-6px;border-radius:var(--ssv-radius)}",
     ".ssv-info{padding:16px 4px 0}",
     ".ssv-root .ssv-title{margin:0;padding:0;color:var(--ssv-ink);font-family:var(--ssv-head);font-weight:400;font-size:clamp(17px,1.5vw,21px);line-height:1.15;letter-spacing:-.01em;text-transform:uppercase;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
@@ -247,7 +247,7 @@
     var settings = Object.assign({ theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, loop: true, playIn: "popup" }, (data && data.settings) || {});
     if (root.dataset.theme) settings.theme = root.dataset.theme;
     if (root.dataset.perView) settings.perViewDesktop = +root.dataset.perView;
-    var videos = ((data && data.videos) || []).filter(function (v) { return v && v.video; });
+    var videos = ((data && data.videos) || []).filter(function (v) { return v && v.video && !v.hidden; });
 
     root.innerHTML = "";
     var wrap = el("div", "ssv-root");
@@ -293,6 +293,10 @@
       var info = parseVideo(item.video);
       var card = el("article", "ssv-card");
       var media = el("div", "ssv-media");
+
+      // framing chosen in the app's cover editor (which part of the picture shows, and zoom)
+      if (item.coverPos) media.style.setProperty("--ssv-pos", item.coverPos);
+      if (item.coverZoom) media.style.setProperty("--ssv-z", item.coverZoom);
 
       if (item.thumbnail) {
         media.appendChild(thumb(resolveSrc(item.thumbnail)));
