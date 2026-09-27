@@ -52,6 +52,30 @@
     ".ssv-root .ssv-arrow:disabled{opacity:.25;cursor:default}",
     ".ssv-root .ssv-arrow:focus-visible{outline:2px solid var(--ssv-ink);outline-offset:3px}",
     ".ssv-root.ssv-fits .ssv-controls{display:none}",
+    ".ssv-ig-cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:radial-gradient(120% 90% at 50% 0%,#2a2a2a 0%,#0c0c0c 70%);color:#fafafa;font-family:var(--ssv-head);font-size:14px;letter-spacing:.08em;text-transform:uppercase}",
+    ".ssv-ig-cover svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.6;opacity:.9}",
+    ".ssv-ig-cover svg .dot{fill:currentColor;stroke:none}",
+    ".ssv-ig-cover span{opacity:.75;transform:translateY(1px)}",
+    ".ssv-modal{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.84);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .35s ease;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}",
+    ".ssv-modal[hidden]{display:none}",
+    ".ssv-modal.is-open{opacity:1}",
+    ".ssv-modal *{box-sizing:border-box}",
+    ".ssv-modal-box{width:min(440px,100%);max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);display:flex;flex-direction:column;gap:12px;transform:translateY(16px) scale(.985);transition:transform .5s cubic-bezier(.2,.7,.2,1)}",
+    ".ssv-modal.is-open .ssv-modal-box{transform:none}",
+    ".ssv-modal-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#fafafa}",
+    ".ssv-modal-title{font-family:'Dangrek','Arial Narrow',sans-serif;font-size:17px;line-height:1.1;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform:translateY(1px)}",
+    ".ssv-modal .ssv-modal-close{-webkit-appearance:none;appearance:none;flex-shrink:0;display:inline-flex;align-items:center;gap:8px;height:38px;margin:0;padding:0 14px 0 16px;border:1.5px solid rgba(250,250,250,.9);border-radius:300px;background:transparent;color:#fafafa;cursor:pointer;font-family:'Dangrek','Arial Narrow',sans-serif;font-size:14px;letter-spacing:.03em;text-transform:uppercase;transition:background .25s ease,color .25s ease}",
+    ".ssv-modal-close span{transform:translateY(1px)}",
+    ".ssv-modal-close svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}",
+    "@media (hover:hover){.ssv-modal .ssv-modal-close:hover{background:#fafafa;color:#000}}",
+    ".ssv-modal .ssv-modal-close:focus-visible{outline:2px solid #fafafa;outline-offset:3px}",
+    ".ssv-modal-frame{position:relative;flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:#fff;border-radius:20px}",
+    ".ssv-modal-frame::before{content:'Loading…';position:absolute;top:50%;left:0;right:0;text-align:center;transform:translateY(-50%);color:rgba(0,0,0,.4);font-size:13px;font-weight:500;letter-spacing:.04em}",
+    ".ssv-modal-frame iframe{position:relative;display:block;width:100%;height:640px;height:min(720px,calc(100dvh - 140px));border:0;background:transparent}",
+    ".ssv-modal .ssv-modal-link{align-self:center;color:rgba(250,250,250,.75);font-size:13px;font-weight:500;text-decoration:none;border-bottom:1px solid rgba(250,250,250,.3);padding-bottom:1px}",
+    ".ssv-modal .ssv-modal-link:hover{color:#fafafa;border-color:#fafafa}",
+    "@media (max-width:640px){.ssv-modal{padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}.ssv-modal-box{max-height:calc(100dvh - 24px);gap:10px}.ssv-modal-frame{border-radius:16px}.ssv-modal-title{font-size:15px}}",
+    "@media (prefers-reduced-motion:reduce){.ssv-modal,.ssv-modal-box{transition:none}}",
     ".ssv-empty{padding:40px 0;text-align:center;color:var(--ssv-muted);font-size:14px}",
     "@media (max-width:640px){.ssv-info{padding:12px 2px 0}.ssv-root .ssv-title{font-size:18px;-webkit-line-clamp:2}.ssv-meta{font-size:12.5px;margin-top:4px}.ssv-controls{margin-top:20px;gap:16px}.ssv-arrows{gap:8px}.ssv-root .ssv-arrow{width:42px;height:42px}.ssv-arrow svg{width:18px;height:18px}.ssv-root .ssv-play{padding:10px}.ssv-pill{height:30px;padding:0 13px 0 10px;gap:7px;font-size:13px}.ssv-pill svg{width:10px;height:10px}}",
     "@media (max-width:360px){.ssv-root{--ssv-per:1.06!important}.ssv-root .ssv-title{font-size:16px}.ssv-root .ssv-arrow{width:38px;height:38px}}",
@@ -80,10 +104,77 @@
     if (m) return { type: "youtube", id: m[1] };
     m = url.match(/vimeo\.com\/(?:[^?#]*?\/)?(\d{5,})(?:\/([0-9a-f]{6,}))?/);
     if (m) return { type: "vimeo", id: m[1], hash: m[2] || (url.match(/[?&]h=([0-9a-f]+)/) || [])[1] };
+    m = url.match(/instagram\.com\/(?:[\w.]+\/)?(p|reels?|tv)\/([\w-]+)/);
+    if (m) return { type: "instagram", code: m[2], kind: m[1] === "p" ? "post" : "reel" };
     if (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url)) return { type: "file", src: url };
     return { type: "iframe", src: url };
   }
   W.parseVideo = parseVideo;
+
+  // uploaded covers are stored in the repo as "covers/….jpg"
+  function resolveSrc(src) {
+    if (!src || /^(https?:|data:|blob:|\/\/)/i.test(src)) return src;
+    return BASE + src.replace(/^\.?\//, "");
+  }
+
+  /* ---------- Instagram pop-up (posts are tall, so they open over the page) ---------- */
+  var modal = null, modalFrame = null, modalReturn = null, savedOverflow = "";
+  var IG_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" class="dot"/></svg>';
+  function closeModal() {
+    if (!modal || !modal.classList.contains("is-open")) return;
+    modal.classList.remove("is-open");
+    document.documentElement.style.overflow = savedOverflow;
+    setTimeout(function () { if (!modal.classList.contains("is-open")) { modal.hidden = true; modalFrame.innerHTML = ""; } }, 350);
+    if (modalReturn && modalReturn.focus) modalReturn.focus();
+  }
+  function openInstagram(item, info, trigger) {
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.className = "ssv-modal";
+      modal.hidden = true;
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.innerHTML =
+        '<div class="ssv-modal-box">' +
+          '<div class="ssv-modal-bar"><span class="ssv-modal-title"></span>' +
+          '<button type="button" class="ssv-modal-close" aria-label="Close"><span>Close</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+          '<div class="ssv-modal-frame"></div>' +
+          '<a class="ssv-modal-link" target="_blank" rel="noopener">Open on Instagram ↗</a>' +
+        '</div>';
+      document.body.appendChild(modal);
+      modalFrame = modal.querySelector(".ssv-modal-frame");
+      modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+      modal.querySelector(".ssv-modal-close").addEventListener("click", closeModal);
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
+      // Instagram's embed tells the page how tall it wants to be
+      window.addEventListener("message", function (e) {
+        if (!/^https:\/\/www\.instagram\.com$/.test(e.origin)) return;
+        var f = modalFrame && modalFrame.querySelector("iframe");
+        if (!f || e.source !== f.contentWindow) return;
+        try {
+          var d = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+          if (d && d.type === "MEASURE" && d.details && d.details.height) f.style.height = Math.ceil(d.details.height) + "px";
+        } catch (x) {}
+      });
+    }
+    modal.querySelector(".ssv-modal-title").textContent = item.title || (info.kind === "reel" ? "Instagram reel" : "Instagram post");
+    modal.querySelector(".ssv-modal-link").href = "https://www.instagram.com/" + (info.kind === "reel" ? "reel" : "p") + "/" + info.code + "/";
+    modal.setAttribute("aria-label", item.title || "Instagram post");
+    var frame = document.createElement("iframe");
+    frame.src = "https://www.instagram.com/p/" + info.code + "/embed/";
+    frame.title = item.title || "Instagram post";
+    frame.allow = "autoplay; encrypted-media; picture-in-picture; clipboard-write";
+    frame.setAttribute("scrolling", "no");
+    modalFrame.innerHTML = "";
+    modalFrame.appendChild(frame);
+    modalReturn = trigger;
+    savedOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    modal.hidden = false;
+    void modal.offsetWidth; // apply the closed state first so the fade-in runs
+    modal.classList.add("is-open");
+    modal.querySelector(".ssv-modal-close").focus();
+  }
 
   function el(tag, cls, text) {
     var e = document.createElement(tag);
@@ -182,7 +273,11 @@
       var media = el("div", "ssv-media");
 
       if (item.thumbnail) {
-        media.appendChild(thumb(item.thumbnail));
+        media.appendChild(thumb(resolveSrc(item.thumbnail)));
+      } else if (info.type === "instagram") {
+        var ph = el("div", "ssv-ig-cover");
+        ph.innerHTML = IG_ICON + "<span>" + (info.kind === "reel" ? "Instagram reel" : "Instagram post") + "</span>";
+        media.appendChild(ph);
       } else if (info.type === "youtube") {
         media.appendChild(thumb("https://i.ytimg.com/vi/" + info.id + "/maxresdefault.jpg",
                                 "https://i.ytimg.com/vi/" + info.id + "/hqdefault.jpg"));
@@ -207,8 +302,11 @@
       var btn = el("button", "ssv-play");
       btn.type = "button";
       btn.setAttribute("aria-label", "Play" + (item.title ? ": " + item.title : " video"));
-      btn.innerHTML = '<span class="ssv-pill"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6a.6.6 0 0 0 .9.5l7.8-4.8a.6.6 0 0 0 0-1L3.4.7a.6.6 0 0 0-.9.5z"/></svg><span>Play</span></span>';
-      btn.addEventListener("click", function () { play(item, info, media); });
+      btn.innerHTML = '<span class="ssv-pill"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6a.6.6 0 0 0 .9.5l7.8-4.8a.6.6 0 0 0 0-1L3.4.7a.6.6 0 0 0-.9.5z"/></svg><span>' + (info.type === "instagram" && info.kind === "post" ? "View" : "Play") + '</span></span>';
+      btn.addEventListener("click", function () {
+        if (info.type === "instagram") openInstagram(item, info, btn);
+        else play(item, info, media);
+      });
       media.appendChild(btn);
       card.appendChild(media);
 

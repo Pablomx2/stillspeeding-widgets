@@ -126,6 +126,10 @@
   .thumb { width: 132px; aspect-ratio: 16 / 9; border-radius: 10px; background: #111 center / cover no-repeat; position: relative; overflow: hidden; }
   .thumb .kind { position: absolute; left: 6px; bottom: 6px; background: rgba(255,255,255,.92); color: #000; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 300px; }
   .fields { display: grid; gap: 8px; min-width: 0; }
+  .thumb.ig { background: radial-gradient(120% 90% at 50% 0%, #2a2a2a 0%, #0c0c0c 70%); color: #fafafa; display: grid; place-items: center; }
+  .thumb.ig svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .cover-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .cover-hint { font-size: 12px; color: var(--muted); }
   .fields .input { height: 38px; font-size: 14px; }
   .fields .input.title { height: 40px; font-size: 15px; }
   .src-line { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -247,10 +251,10 @@
     <div class="panel">
       <div class="panel-head"><h2>Add a video</h2></div>
       <form class="add-bar" id="addVideoForm" autocomplete="off">
-        <input class="input" id="addVideoUrl" type="url" inputmode="url" placeholder="Paste a YouTube or Vimeo link…" required>
+        <input class="input" id="addVideoUrl" type="url" inputmode="url" placeholder="Paste a YouTube, Vimeo or Instagram link…" required>
         <button class="btn btn-solid" type="submit"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Add</span></button>
       </form>
-      <p class="hint">The title fills in automatically — you can change it after. New videos go to the front.</p>
+      <p class="hint">YouTube and Vimeo titles fill in automatically. For Instagram, add a title and a cover picture. New videos go to the front.</p>
     </div>
     <div class="panel">
       <div class="panel-head"><h2>Your videos</h2><span class="hint" id="videoHint">Drag or use the arrows</span></div>
@@ -412,7 +416,12 @@
   }
   function serialize(kind) { return JSON.stringify(clean(kind), null, 2) + "\n"; }
   function isDirty(kind) { return state[kind] && serialize(kind) !== remote[kind].json; }
-  function pendingUploads() { return state.logos ? state.logos.logos.filter(function (l) { return l.pending; }) : []; }
+  function pendingUploads() {
+    var out = [];
+    if (state.logos) state.logos.logos.forEach(function (l) { if (l.pending) out.push({ item: l, path: l.src, label: "logo: " + (l.name || l.src) }); });
+    if (state.videos) state.videos.videos.forEach(function (v) { if (v.pending) out.push({ item: v, path: v.thumbnail, label: "cover: " + (v.title || v.thumbnail) }); });
+    return out;
+  }
 
   /* ---------------- helpers ---------------- */
   function el(tag, attrs, kids) {
@@ -433,6 +442,7 @@
     left: '<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
     right: '<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
     x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    ig: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>',
     grip: '<svg viewBox="0 0 10 16"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg>'
   };
   function b64encodeText(str) {
@@ -514,11 +524,19 @@
 
   function saveDraft() {
     var draft = {};
-    ["videos", "logos"].forEach(function (k) { if (isDirty(k) || (k === "logos" && pendingUploads().length)) draft[k] = state[k]; });
+    var pend = pendingUploads().length > 0;
+    ["videos", "logos"].forEach(function (k) { if (isDirty(k) || pend) draft[k] = state[k]; });
     if (Object.keys(draft).length) {
       try { localStorage.setItem(LS.draft, JSON.stringify(draft)); }
       catch (e) { // images too big for storage — keep the rest
-        try { draft.logos = draft.logos && Object.assign({}, draft.logos, { logos: draft.logos.logos.filter(function (l) { return !l.pending; }) }); localStorage.setItem(LS.draft, JSON.stringify(draft)); } catch (e2) {}
+        try {
+          if (draft.logos) draft.logos = Object.assign({}, draft.logos, { logos: draft.logos.logos.filter(function (l) { return !l.pending; }) });
+          if (draft.videos) draft.videos = Object.assign({}, draft.videos, { videos: draft.videos.videos.map(function (v) {
+            if (!v.pending) return v;
+            var c = Object.assign({}, v); delete c.pending; delete c.preview; delete c.thumbnail; return c;
+          }) });
+          localStorage.setItem(LS.draft, JSON.stringify(draft));
+        } catch (e2) {}
       }
     } else lsSet(LS.draft, null);
   }
@@ -556,9 +574,9 @@
 
     var uploads = pendingUploads();
     var chain = Promise.resolve();
-    uploads.forEach(function (l) {
+    uploads.forEach(function (u) {
       chain = chain.then(function () {
-        return putFile(l.src, l.pending, "Add logo: " + (l.name || l.src)).then(function () { delete l.pending; });
+        return putFile(u.path, u.item.pending, "Add " + u.label).then(function () { delete u.item.pending; });
       });
     });
     ["videos", "logos"].forEach(function (kind) {
@@ -615,6 +633,12 @@
       if (!frameReady || tab === "install" || !state[tab]) return;
       var data = JSON.parse(JSON.stringify(state[tab]));
       if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, src: l.preview || resolveSrc(l.src) }; });
+      if (tab === "videos") data.videos = data.videos.map(function (v) {
+        var o = Object.assign({}, v);
+        delete o.pending; delete o.preview;
+        if (v.preview) o.thumbnail = v.preview; else if (v.thumbnail) o.thumbnail = resolveSrc(v.thumbnail);
+        return o;
+      });
       frame.contentWindow.postMessage({ type: "ssw-render", kind: tab, data: data, bg: previewBg }, location.origin);
     }, now ? 0 : 180);
   }
@@ -666,13 +690,17 @@
     if (m) return { type: "youtube", id: m[1] };
     m = url.match(/vimeo\.com\/(?:[^?#]*?\/)?(\d{5,})(?:\/([0-9a-f]{6,}))?/);
     if (m) return { type: "vimeo", id: m[1], hash: m[2] };
+    m = url.match(/instagram\.com\/(?:[\w.]+\/)?(p|reels?|tv)\/([\w-]+)/);
+    if (m) return { type: "instagram", code: m[2], kind: m[1] === "p" ? "post" : "reel" };
     if (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url)) return { type: "file" };
     return { type: "other" };
   }
   var vimeoThumbs = {};
   function setThumb(box, v) {
     var info = parseVideo(v.video);
-    if (v.thumbnail) box.style.backgroundImage = "url('" + v.thumbnail.replace(/'/g, "%27") + "')";
+    var cover = v.preview || (v.thumbnail && resolveSrc(v.thumbnail));
+    if (cover) box.style.backgroundImage = "url('" + cover.replace(/'/g, "%27") + "')";
+    else if (info.type === "instagram") { box.classList.add("ig"); box.innerHTML = ICON.ig; }
     else if (info.type === "youtube") box.style.backgroundImage = "url('https://i.ytimg.com/vi/" + info.id + "/mqdefault.jpg')";
     else if (info.type === "vimeo") {
       var apply = function (u) { if (u) box.style.backgroundImage = "url('" + u + "')"; };
@@ -703,6 +731,7 @@
           el("input", { class: "input", type: "url", inputmode: "url", value: v.link || "", placeholder: "Optional link (https://…)", "aria-label": "Optional link", oninput: bind("link") }),
           linkText
         ]),
+        coverControls(v, i),
         el("div", { class: "src-line" }, [el("a", { href: v.video, target: "_blank", rel: "noopener", text: v.video })])
       ]);
       var actions = el("div", { class: "actions" }, [
@@ -721,13 +750,66 @@
     });
   }
 
+  // cover picture: required-ish for Instagram, optional for everything else
+  function coverControls(v, i) {
+    var isIg = parseVideo(v.video).type === "instagram";
+    var input = el("input", { type: "file", accept: "image/jpeg,image/png,image/webp", hidden: "" });
+    input.addEventListener("change", function () {
+      var f = input.files && input.files[0];
+      if (!f) return;
+      prepareCover(f).then(function (dataUrl) {
+        v.thumbnail = "covers/" + slug(v.title || "cover") + "-" + Date.now().toString(36).slice(-5) + ".jpg";
+        v.preview = dataUrl;
+        v.pending = dataUrl.split(",")[1];
+        renderVideoList(i);
+        changed();
+        toast("Cover added — press Publish to update your site.");
+      });
+    });
+    var has = !!(v.thumbnail || v.preview);
+    var kids = [
+      el("button", { class: "btn btn-sm", type: "button", onclick: function () { input.click(); } }, [
+        el("span", { text: has ? "Change cover" : "Add cover" })
+      ]),
+      input
+    ];
+    if (has) kids.push(el("button", { class: "link-btn", type: "button", text: "Remove cover", onclick: function () {
+      delete v.thumbnail; delete v.preview; delete v.pending;
+      renderVideoList(i); changed();
+    } }));
+    else if (isIg) kids.push(el("span", { class: "cover-hint", text: "Instagram needs a cover picture — a screenshot of the post works." }));
+    return el("div", { class: "cover-row" }, kids);
+  }
+  // resize covers to a sensible size for the web
+  function prepareCover(file) {
+    return readAsDataURL(file).then(function (dataUrl) {
+      return new Promise(function (res) {
+        var img = new Image();
+        img.onload = function () {
+          var scale = Math.min(1, 1280 / img.naturalWidth, 1280 / img.naturalHeight);
+          var c = document.createElement("canvas");
+          c.width = Math.round(img.naturalWidth * scale);
+          c.height = Math.round(img.naturalHeight * scale);
+          var ctx = c.getContext("2d");
+          ctx.fillStyle = "#000";
+          ctx.fillRect(0, 0, c.width, c.height);
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          res(c.toDataURL("image/jpeg", 0.85));
+        };
+        img.onerror = function () { res(dataUrl); };
+        img.src = dataUrl;
+      });
+    });
+  }
+
   $("#addVideoForm").addEventListener("submit", function (e) {
     e.preventDefault();
     var input = $("#addVideoUrl"), url = input.value.trim();
     if (!url) return;
     var info = parseVideo(url);
     if (info.type === "youtube") url = "https://www.youtube.com/watch?v=" + info.id;
-    var v = { video: url, title: "", meta: "" };
+    if (info.type === "instagram") url = "https://www.instagram.com/" + (info.kind === "reel" ? "reel" : "p") + "/" + info.code + "/";
+    var v = { video: url, title: "", meta: info.type === "instagram" ? (info.kind === "reel" ? "Instagram reel" : "Instagram post") : "" };
     state.videos.videos.unshift(v);
     input.value = "";
     renderVideoList(0);
@@ -740,7 +822,11 @@
       renderVideoList(state.videos.videos.indexOf(v));
       changed();
     }).catch(function () {});
-    toast("Added — edit the title if you like, then Publish.");
+    if (info.type === "instagram") {
+      toast("Instagram added — give it a title and a cover picture, then Publish.");
+      var t = $("#videoList .item .input.title");
+      if (t) t.focus();
+    } else toast("Added — edit the title if you like, then Publish.");
   });
 
   /* ---------------- logos ---------------- */
