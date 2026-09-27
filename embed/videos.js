@@ -2,7 +2,7 @@
    Usage on the site:
      <div class="ss-videos"></div>
      <script src="https://<user>.github.io/stillspeeding-widgets/embed/videos.js"></script>
-   Optional per-block overrides: data-theme="dark", data-per-view="2"
+   Optional per-block overrides: data-theme="dark", data-per-view="2", data-loop="false"
    Content comes from data/videos.json (edited with the admin app). */
 (function () {
   var script = document.currentScript;
@@ -43,7 +43,7 @@
     ".ssv-root .ssv-link:hover{border-color:var(--ssv-ink)}",
     ".ssv-controls{display:flex;align-items:center;gap:24px;margin-top:28px}",
     ".ssv-progress{position:relative;flex:1;height:2px;background:var(--ssv-line);border-radius:2px;overflow:hidden}",
-    ".ssv-progress-bar{position:absolute;top:0;bottom:0;left:0;background:var(--ssv-ink);border-radius:2px;transition:transform .15s linear;will-change:transform}",
+    ".ssv-progress-bar{position:absolute;top:0;bottom:0;left:0;background:var(--ssv-ink);border-radius:2px;will-change:transform}",
     ".ssv-arrows{display:flex;gap:10px}",
     ".ssv-root .ssv-arrow{-webkit-appearance:none;appearance:none;width:48px;height:48px;margin:0;padding:0;border:1.5px solid var(--ssv-ink);border-radius:300px;background:transparent;color:var(--ssv-ink);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .25s ease,color .25s ease,opacity .25s ease}",
     ".ssv-arrow svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}",
@@ -113,7 +113,7 @@
     var cleanups = [];
     root._ssCleanup = function () { cleanups.forEach(function (f) { f(); }); };
 
-    var settings = Object.assign({ theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true }, (data && data.settings) || {});
+    var settings = Object.assign({ theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, loop: true }, (data && data.settings) || {});
     if (root.dataset.theme) settings.theme = root.dataset.theme;
     if (root.dataset.perView) settings.perViewDesktop = +root.dataset.perView;
     var videos = ((data && data.videos) || []).filter(function (v) { return v && v.video; });
@@ -176,7 +176,7 @@
       playing = { media: media, saved: saved };
     }
 
-    videos.forEach(function (item) {
+    function buildCard(item, isClone) {
       var info = parseVideo(item.video);
       var card = el("article", "ssv-card");
       var media = el("div", "ssv-media");
@@ -228,11 +228,56 @@
         }
         card.appendChild(infoEl);
       }
-      track.appendChild(card);
-    });
+      if (isClone) {
+        // copies used for the endless loop: clickable, but hidden from screen readers / tabbing
+        card.setAttribute("aria-hidden", "true");
+        Array.prototype.forEach.call(card.querySelectorAll("button, a"), function (n) { n.tabIndex = -1; });
+      }
+      return card;
+    }
+    videos.forEach(function (item) { track.appendChild(buildCard(item, false)); });
+
+    var n = videos.length;
+    var loop = settings.loop !== false && root.dataset.loop !== "false";
+    var looping = false;
+    var bar2 = bar.cloneNode();
+    bar.parentNode.appendChild(bar2);
+
+    function maxScroll() { return viewport.scrollWidth - viewport.clientWidth; }
+    function step() {
+      var c = track.children;
+      return c.length > 1 ? c[1].offsetLeft - c[0].offsetLeft : (c[0] ? c[0].offsetWidth : 1);
+    }
+    function jumpTo(x) {
+      viewport.style.scrollBehavior = "auto";
+      viewport.scrollLeft = x;
+      viewport.style.scrollBehavior = "";
+    }
+
+    /* Endless loop: three copies of the list side by side. We always settle in the middle
+       copy — whenever scrolling stops in the first or last copy, we silently jump by exactly
+       one copy's width, which looks identical, so the carousel never runs out. */
+    function enableLoop() {
+      if (looping || !loop || n < 2 || maxScroll() <= 2) return;
+      looping = true;
+      var before = document.createDocumentFragment(), after = document.createDocumentFragment();
+      videos.forEach(function (item) {
+        before.appendChild(buildCard(item, true));
+        after.appendChild(buildCard(item, true));
+      });
+      track.insertBefore(before, track.firstChild);
+      track.appendChild(after);
+      jumpTo(step() * n);
+    }
+    var touching = false, settleTimer;
+    function recentre() {
+      if (!looping || touching || playing) return;
+      var W = step() * n, x = viewport.scrollLeft;
+      if (x < W - 2) jumpTo(x + W);
+      else if (x >= 2 * W - 2) jumpTo(x - W);
+    }
 
     var cards = track.children;
-    function maxScroll() { return viewport.scrollWidth - viewport.clientWidth; }
     function stops() {
       var max = maxScroll(), out = [];
       for (var i = 0; i < cards.length; i++) {
@@ -247,20 +292,37 @@
       return best;
     }
     function go(dir) {
+      if (looping) {
+        recentre();
+        var s = step();
+        viewport.scrollTo({ left: (Math.round(viewport.scrollLeft / s) + dir) * s, behavior: "smooth" });
+        return;
+      }
       var list = stops();
       var i = Math.max(0, Math.min(list.length - 1, currentStop(list) + dir));
       viewport.scrollTo({ left: list[i], behavior: "smooth" });
     }
     function update() {
       var max = maxScroll();
-      var fits = max <= 2;
+      var fits = max <= 2 && !looping;
       wrap.classList.toggle("ssv-fits", fits);
-      var visible = viewport.clientWidth / viewport.scrollWidth;
-      var pos = fits ? 0 : viewport.scrollLeft / max;
-      bar.style.width = visible * 100 + "%";
-      bar.style.transform = "translateX(" + pos * (1 / visible - 1) * 100 + "%)";
-      prevBtn.disabled = viewport.scrollLeft <= 2;
-      nextBtn.disabled = viewport.scrollLeft >= max - 2;
+      if (looping) {
+        // a segment that slides along and wraps around the line
+        var s = step(), rel = ((viewport.scrollLeft - s * n) / s) % n;
+        if (rel < 0) rel += n;
+        bar.style.width = bar2.style.width = 100 / n + "%";
+        bar.style.transform = "translateX(" + rel * 100 + "%)";
+        bar2.style.transform = "translateX(" + (rel - n) * 100 + "%)";
+        prevBtn.disabled = nextBtn.disabled = false;
+      } else {
+        var visible = viewport.clientWidth / viewport.scrollWidth;
+        var pos = fits ? 0 : viewport.scrollLeft / max;
+        bar.style.width = visible * 100 + "%";
+        bar.style.transform = "translateX(" + pos * (1 / visible - 1) * 100 + "%)";
+        bar2.style.width = "0";
+        prevBtn.disabled = viewport.scrollLeft <= 2;
+        nextBtn.disabled = viewport.scrollLeft >= max - 2;
+      }
       if (playing) {
         var r = playing.media.getBoundingClientRect(), v = viewport.getBoundingClientRect();
         if (r.right < v.left + 20 || r.left > v.right - 20) stopPlaying();
@@ -269,10 +331,17 @@
 
     var ticking = false;
     viewport.addEventListener("scroll", function () {
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(recentre, 160);
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(function () { ticking = false; update(); });
     }, { passive: true });
+    viewport.addEventListener("touchstart", function () { touching = true; }, { passive: true });
+    function touchEnd() { touching = false; clearTimeout(settleTimer); settleTimer = setTimeout(recentre, 160); }
+    viewport.addEventListener("touchend", touchEnd, { passive: true });
+    viewport.addEventListener("touchcancel", touchEnd, { passive: true });
+    cleanups.push(function () { clearTimeout(settleTimer); });
     prevBtn.addEventListener("click", function () { go(-1); });
     nextBtn.addEventListener("click", function () { go(1); });
     viewport.addEventListener("keydown", function (e) {
@@ -280,15 +349,27 @@
       if (e.key === "ArrowRight") { e.preventDefault(); go(1); }
       if (e.key === "ArrowLeft") { e.preventDefault(); go(-1); }
     });
+
+    // keep the same video in place when the screen size changes
+    var lastStep = 0;
+    function onResize() {
+      var s = step();
+      if (looping && lastStep && Math.abs(s - lastStep) > 0.5) jumpTo(Math.round(viewport.scrollLeft / lastStep) * s);
+      lastStep = s;
+      enableLoop();
+      update();
+    }
     if (window.ResizeObserver) {
-      var ro = new ResizeObserver(update);
+      var ro = new ResizeObserver(onResize);
       ro.observe(viewport);
       cleanups.push(function () { ro.disconnect(); });
     } else {
-      window.addEventListener("resize", update);
-      cleanups.push(function () { window.removeEventListener("resize", update); });
+      window.addEventListener("resize", onResize);
+      cleanups.push(function () { window.removeEventListener("resize", onResize); });
     }
     viewport.scrollLeft = 0;
+    enableLoop();
+    lastStep = step();
     update();
   };
 

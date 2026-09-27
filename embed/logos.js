@@ -2,7 +2,8 @@
    Usage on the site:
      <div class="ss-logos"></div>
      <script src="https://<user>.github.io/stillspeeding-widgets/embed/logos.js"></script>
-   Optional per-block overrides: data-theme="dark", data-style="mono", data-heading="Clients"
+   Optional per-block overrides: data-theme="dark", data-style="mono", data-heading="Clients",
+   data-animation="glide | step | fade | still"
    Content comes from data/logos.json (edited with the admin app). */
 (function () {
   var script = document.currentScript;
@@ -30,6 +31,11 @@
     ".ssl-root.ssl-static .ssl-track{width:100%}",
     ".ssl-root.ssl-static .ssl-set{flex-wrap:wrap;justify-content:center;row-gap:32px;width:100%;flex-shrink:1}",
     ".ssl-root.ssl-static .ssl-viewport{-webkit-mask-image:none;mask-image:none}",
+    ".ssl-root.ssl-fading .ssl-viewport{-webkit-mask-image:none;mask-image:none}",
+    ".ssl-fade-row{display:grid;align-items:center;justify-items:center;min-height:calc(var(--ssl-height) + 4px)}",
+    ".ssl-slot{display:flex;align-items:center;justify-content:center;min-width:0;transition:opacity .55s ease,transform .7s cubic-bezier(.2,.7,.2,1),filter .55s ease}",
+    ".ssl-slot.is-out{opacity:0;transform:translateY(6px);filter:blur(3px)}",
+    ".ssl-root .ssl-slot .ssl-item{padding:0 8px}",
     ".ssl-empty{padding:30px 0;text-align:center;opacity:.5;font-size:14px}",
     "@media (max-width:640px){.ssl-root{--ssl-gap:48px!important;--ssl-fade:10%}.ssl-root .ssl-item img{height:calc(var(--ssl-height) * .78);max-width:calc(var(--ssl-max-width) * .8)}.ssl-heading{font-size:13px;gap:12px;margin-bottom:22px}}"
   ].join("\n");
@@ -68,7 +74,7 @@
     var S = Object.assign({
       heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55,
       colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140,
-      gap: 80, pauseOnHover: true, fadeEdges: true
+      gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3
     }, (data && data.settings) || {});
     if (root.dataset.theme) S.theme = root.dataset.theme;
     if (root.dataset.style) S.style = root.dataset.style;
@@ -135,21 +141,54 @@
     track.appendChild(original);
 
     var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || !track.animate) { wrap.classList.add("ssl-static"); return; }
+    var mode = root.dataset.animation || S.animation || "glide";
+    if (["glide", "step", "fade", "still"].indexOf(mode) < 0) mode = "glide";
+    if (reduced || !track.animate) mode = "still";
+    if (mode === "still") { wrap.classList.add("ssl-static"); return; }
 
-    var anim = null, lastWidth = 0, lastSet = 0, dead = false;
-    cleanups.push(function () { dead = true; if (anim) anim.cancel(); });
+    var dead = false, onScreen = true, hovered = false;
+    var right = S.direction === "right";
+    var interval = Math.max(1, +S.interval || 3) * 1000;
+    cleanups.push(function () { dead = true; });
 
-    function layout() {
-      if (dead) return;
-      var setWidth = original.getBoundingClientRect().width;
-      var viewWidth = viewport.clientWidth;
-      if (!setWidth || !viewWidth) return;
-      if (viewWidth === lastWidth && Math.abs(setWidth - lastSet) < 1) return;
-      lastWidth = viewWidth;
-      lastSet = setWidth;
-
+    /* ---------- shared helpers ---------- */
+    function whenImagesReady(cb) {
+      var imgs = Array.prototype.slice.call(original.querySelectorAll("img"));
+      Promise.all(imgs.map(function (img) {
+        return img.complete ? null : new Promise(function (res) { img.onload = img.onerror = res; });
+      })).then(function () { if (!dead) cb(); });
+    }
+    function watchResize(cb) {
+      var t;
+      function later() { clearTimeout(t); t = setTimeout(function () { if (!dead) cb(); }, 120); }
+      if (window.ResizeObserver) {
+        var ro = new ResizeObserver(later);
+        ro.observe(viewport);
+        cleanups.push(function () { ro.disconnect(); });
+      } else {
+        window.addEventListener("resize", later);
+        cleanups.push(function () { window.removeEventListener("resize", later); });
+      }
+      cleanups.push(function () { clearTimeout(t); });
+    }
+    function watchScreen(cb) {
+      if (!window.IntersectionObserver) return;
+      var io = new IntersectionObserver(function (entries) { onScreen = entries[0].isIntersecting; if (cb) cb(); });
+      io.observe(viewport);
+      cleanups.push(function () { io.disconnect(); });
+    }
+    function watchHover(onIn, onOut) {
+      if (!S.pauseOnHover) return;
+      viewport.addEventListener("mouseenter", function () { hovered = true; if (onIn) onIn(); });
+      viewport.addEventListener("mouseleave", function () { hovered = false; if (onOut) onOut(); });
+      viewport.addEventListener("focusin", function () { hovered = true; if (onIn) onIn(); });
+      viewport.addEventListener("focusout", function () { hovered = false; if (onOut) onOut(); });
+    }
+    // repeat the logo set enough times to fill the strip; returns the width of one set
+    function fillClones() {
       while (track.children.length > 1) track.removeChild(track.lastChild);
+      var setWidth = original.getBoundingClientRect().width, viewWidth = viewport.clientWidth;
+      if (!setWidth || !viewWidth) return 0;
       var copies = Math.ceil(viewWidth / setWidth) + 1;
       for (var i = 0; i < copies; i++) {
         var clone = original.cloneNode(true);
@@ -157,98 +196,182 @@
         Array.prototype.forEach.call(clone.querySelectorAll("a"), function (a) { a.tabIndex = -1; });
         track.appendChild(clone);
       }
-
-      var right = S.direction === "right";
-      var progress = anim ? (anim.currentTime || 0) / anim.effect.getTiming().duration : 0;
-      if (anim) anim.cancel();
-      var duration = (setWidth / Math.max(1, S.speed)) * 1000;
-      anim = track.animate(
-        [{ transform: "translate3d(" + (right ? -setWidth : 0) + "px,0,0)" },
-         { transform: "translate3d(" + (right ? 0 : -setWidth) + "px,0,0)" }],
-        { duration: duration, iterations: Infinity, easing: "linear" }
-      );
-      anim.currentTime = (progress % 1) * duration;
-      if (driving) { cancelGlide(); rate = 0; }
-      anim.playbackRate = rate;
-      if (!onScreen) anim.pause();
+      return setWidth;
     }
 
-    var imgs = Array.prototype.slice.call(original.querySelectorAll("img"));
-    Promise.all(imgs.map(function (img) {
-      return img.complete ? null : new Promise(function (res) { img.onload = img.onerror = res; });
-    })).then(layout);
+    if (mode === "step") startStep();
+    else if (mode === "fade") startFade();
+    else startGlide();
 
-    var t;
-    function relayout() { clearTimeout(t); t = setTimeout(layout, 120); }
-    if (window.ResizeObserver) {
-      var ro = new ResizeObserver(relayout);
-      ro.observe(viewport);
-      cleanups.push(function () { ro.disconnect(); });
-    } else {
-      window.addEventListener("resize", relayout);
-      cleanups.push(function () { window.removeEventListener("resize", relayout); });
-    }
+    /* ---------- GLIDE: continuous drift; hover glides to a soft stop ---------- */
+    function startGlide() {
+      var anim = null, lastWidth = 0, lastSet = 0, rate = 1, rafId = 0, driving = false;
+      var STOP_MS = 1700, GO_MS = 1800, BOUNCE = 2.2; // BOUNCE: 0 = none, ~2 = very subtle
 
-    /* Hover: the strip glides to a stop with a tiny settle-back bounce, then eases back up
-       to speed when the mouse leaves. The stop is driven by position so the bounce is exact;
-       the restart is driven by playback speed. */
-    var onScreen = true, rate = 1, rafId = 0, driving = false;
-    var STOP_MS = 1700, GO_MS = 1800, BOUNCE = 2.2; // BOUNCE: 0 = none, ~2 = very subtle
-    function backOut(p) { var x = p - 1; return 1 + (BOUNCE + 1) * x * x * x + BOUNCE * x * x; }
-    function easeInOut(p) { return -(Math.cos(Math.PI * p) - 1) / 2; }
-    function cancelGlide() { cancelAnimationFrame(rafId); driving = false; }
-    cleanups.push(cancelGlide);
-
-    function glideToStop() {
-      cancelGlide();
-      if (!anim) { rate = 0; return; }
-      var v0 = rate, t0 = anim.currentTime || 0;
-      // distance chosen so the glide starts at exactly the current speed (no jolt)
-      var dist = STOP_MS * v0 / (3 + BOUNCE);
-      if (dist < 1) { rate = 0; anim.playbackRate = 0; return; }
-      anim.pause();
-      driving = true;
-      var start = performance.now(), last = start, lastPos = t0;
-      (function step(now) {
-        if (dead) return;
-        var p = Math.min(1, (now - start) / STOP_MS);
-        var pos = t0 + dist * backOut(p);
-        anim.currentTime = pos;
-        if (now > last) rate = Math.max(0, (pos - lastPos) / (now - last));
-        last = now; lastPos = pos;
-        if (p < 1) { rafId = requestAnimationFrame(step); return; }
-        driving = false;
-        rate = 0;
-        anim.playbackRate = 0;
-        if (onScreen) anim.play();
-      })(start);
-    }
-    function glideToSpeed() {
-      cancelGlide();
-      if (!anim) { rate = 1; return; }
-      var from = rate, start = performance.now();
-      anim.playbackRate = from;
-      if (onScreen) anim.play();
-      (function step(now) {
-        if (dead) return;
-        var p = Math.min(1, (now - start) / GO_MS);
-        rate = from + (1 - from) * easeInOut(p);
+      function layout() {
+        var viewWidth = viewport.clientWidth, setNow = original.getBoundingClientRect().width;
+        if (!setNow || !viewWidth) return;
+        if (viewWidth === lastWidth && Math.abs(setNow - lastSet) < 1) return;
+        var setWidth = fillClones();
+        lastWidth = viewWidth;
+        lastSet = setWidth;
+        var progress = anim ? (anim.currentTime || 0) / anim.effect.getTiming().duration : 0;
+        if (anim) anim.cancel();
+        var duration = (setWidth / Math.max(1, S.speed)) * 1000;
+        anim = track.animate(
+          [{ transform: "translate3d(" + (right ? -setWidth : 0) + "px,0,0)" },
+           { transform: "translate3d(" + (right ? 0 : -setWidth) + "px,0,0)" }],
+          { duration: duration, iterations: Infinity, easing: "linear" }
+        );
+        anim.currentTime = (progress % 1) * duration;
+        if (driving) { cancelGlide(); rate = 0; }
         anim.playbackRate = rate;
-        if (p < 1) rafId = requestAnimationFrame(step);
-      })(start);
+        if (!onScreen) anim.pause();
+      }
+
+      function backOut(p) { var x = p - 1; return 1 + (BOUNCE + 1) * x * x * x + BOUNCE * x * x; }
+      function easeInOut(p) { return -(Math.cos(Math.PI * p) - 1) / 2; }
+      function cancelGlide() { cancelAnimationFrame(rafId); driving = false; }
+      cleanups.push(function () { cancelGlide(); if (anim) anim.cancel(); });
+
+      function glideToStop() {
+        cancelGlide();
+        if (!anim) { rate = 0; return; }
+        var v0 = rate, t0 = anim.currentTime || 0;
+        // distance chosen so the glide starts at exactly the current speed (no jolt)
+        var dist = STOP_MS * v0 / (3 + BOUNCE);
+        if (dist < 1) { rate = 0; anim.playbackRate = 0; return; }
+        anim.pause();
+        driving = true;
+        var start = performance.now(), last = start, lastPos = t0;
+        (function step(now) {
+          if (dead) return;
+          var p = Math.min(1, (now - start) / STOP_MS);
+          var pos = t0 + dist * backOut(p);
+          anim.currentTime = pos;
+          if (now > last) rate = Math.max(0, (pos - lastPos) / (now - last));
+          last = now; lastPos = pos;
+          if (p < 1) { rafId = requestAnimationFrame(step); return; }
+          driving = false;
+          rate = 0;
+          anim.playbackRate = 0;
+          if (onScreen) anim.play();
+        })(start);
+      }
+      function glideToSpeed() {
+        cancelGlide();
+        if (!anim) { rate = 1; return; }
+        var from = rate, start = performance.now();
+        anim.playbackRate = from;
+        if (onScreen) anim.play();
+        (function step(now) {
+          if (dead) return;
+          var p = Math.min(1, (now - start) / GO_MS);
+          rate = from + (1 - from) * easeInOut(p);
+          anim.playbackRate = rate;
+          if (p < 1) rafId = requestAnimationFrame(step);
+        })(start);
+      }
+
+      whenImagesReady(layout);
+      watchResize(layout);
+      watchHover(glideToStop, glideToSpeed);
+      watchScreen(function () { if (anim && !driving) onScreen ? anim.play() : anim.pause(); });
     }
-    function setHover(on) { on ? glideToStop() : glideToSpeed(); }
-    function syncScreen() { if (anim && !driving) onScreen ? anim.play() : anim.pause(); }
-    if (S.pauseOnHover) {
-      viewport.addEventListener("mouseenter", function () { setHover(true); });
-      viewport.addEventListener("mouseleave", function () { setHover(false); });
-      viewport.addEventListener("focusin", function () { setHover(true); });
-      viewport.addEventListener("focusout", function () { setHover(false); });
+
+    /* ---------- STEP: moves one logo along, rests, repeats ---------- */
+    function startStep() {
+      var n = logos.length, offsets = [], idx = 0, anim = null, timer = null;
+      var EASE = "cubic-bezier(.3, 1.06, .45, 1)"; // soft landing with a barely-there settle
+      function tx(x) { return "translate3d(" + x + "px,0,0)"; }
+      function measure() {
+        if (anim) { anim.cancel(); anim = null; }
+        if (!fillClones()) return;
+        offsets = [];
+        var acc = 0;
+        Array.prototype.forEach.call(original.children, function (it) { offsets.push(acc); acc += it.getBoundingClientRect().width; });
+        offsets.push(acc);
+        if (right && idx === 0) idx = n;
+        track.style.transform = tx(-offsets[idx]);
+      }
+      function move() {
+        if (dead) return;
+        if (hovered || !onScreen || !offsets.length) { timer = setTimeout(move, 400); return; }
+        var next = right ? idx - 1 : idx + 1;
+        var ms = Math.min(1300, Math.max(600, interval * 0.4));
+        anim = track.animate([{ transform: tx(-offsets[idx]) }, { transform: tx(-offsets[next]) }],
+                             { duration: ms, easing: EASE, fill: "forwards" });
+        anim.onfinish = function () {
+          idx = next;
+          if (!right && idx >= n) idx = 0;
+          if (right && idx <= 0) idx = n;
+          track.style.transform = tx(-offsets[idx]);
+          if (anim) anim.cancel();
+          anim = null;
+          timer = setTimeout(move, interval);
+        };
+      }
+      cleanups.push(function () { clearTimeout(timer); if (anim) anim.cancel(); });
+      whenImagesReady(function () { measure(); timer = setTimeout(move, interval); });
+      watchResize(measure);
+      watchHover();
+      watchScreen();
     }
-    if (window.IntersectionObserver) {
-      var io = new IntersectionObserver(function (entries) { onScreen = entries[0].isIntersecting; syncScreen(); });
-      io.observe(viewport);
-      cleanups.push(function () { io.disconnect(); });
+
+    /* ---------- FADE: a still row whose logos softly swap to the next group ---------- */
+    function startFade() {
+      wrap.classList.add("ssl-fading");
+      viewport.removeChild(track);
+      var row = document.createElement("div");
+      row.className = "ssl-fade-row";
+      viewport.appendChild(row);
+      var n = logos.length, perRow = 0, first = 0, timer = null, slots = [];
+      function itemAt(i) { return original.children[((i % n) + n) % n].cloneNode(true); }
+      function build() {
+        var mobile = window.matchMedia && matchMedia("(max-width: 640px)").matches;
+        var gap = parseFloat(getComputedStyle(wrap).getPropertyValue("--ssl-gap")) || S.gap;
+        var slotMin = S.logoMaxWidth * (mobile ? 0.8 : 1) + gap * 0.75;
+        var k = Math.max(1, Math.min(n, Math.floor(viewport.clientWidth / slotMin)));
+        if (k === perRow && slots.length) return;
+        perRow = k;
+        row.innerHTML = "";
+        row.style.gridTemplateColumns = "repeat(" + k + ", minmax(0, 1fr))";
+        slots = [];
+        for (var j = 0; j < k; j++) {
+          var slot = document.createElement("div");
+          slot.className = "ssl-slot";
+          slot.appendChild(itemAt(first + j));
+          row.appendChild(slot);
+          slots.push(slot);
+        }
+      }
+      var OUT_MS = 550, STAGGER = 120;
+      function cycle() {
+        if (dead) return;
+        if (perRow >= n) { timer = setTimeout(cycle, interval); return; } // everything already shows
+        if (hovered || !onScreen) { timer = setTimeout(cycle, 400); return; }
+        first = (first + perRow) % n;
+        var group = first;
+        slots.forEach(function (slot, j) {
+          setTimeout(function () {
+            if (dead) return;
+            slot.classList.add("is-out");
+            setTimeout(function () {
+              if (dead) return;
+              slot.innerHTML = "";
+              slot.appendChild(itemAt(group + j));
+              slot.classList.remove("is-out");
+            }, OUT_MS);
+          }, j * STAGGER);
+        });
+        timer = setTimeout(cycle, interval + slots.length * STAGGER + OUT_MS);
+      }
+      cleanups.push(function () { clearTimeout(timer); });
+      build();
+      timer = setTimeout(cycle, interval);
+      watchResize(build);
+      watchHover();
+      watchScreen();
     }
   };
 

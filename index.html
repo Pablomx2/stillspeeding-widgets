@@ -97,7 +97,7 @@
   .set-row .sub { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
   .range { display: flex; align-items: center; gap: 12px; min-width: 220px; flex: 1; max-width: 320px; }
   .range input { flex: 1; accent-color: #000; }
-  .range output { width: 44px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .range output { min-width: 44px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); }
   .switch { position: relative; width: 48px; height: 28px; flex-shrink: 0; }
   .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
   .switch i { position: absolute; inset: 0; border-radius: 300px; background: var(--line-strong); transition: background .2s; }
@@ -210,7 +210,8 @@
     .add-bar .input { flex: none; }
     .logo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .logo-img { height: 70px; }
-    .range { min-width: 0; max-width: none; width: 100%; }
+    .range { min-width: 0; max-width: none; flex: 1 1 100%; }
+    .set-row { row-gap: 8px; }
   }
   @media (max-width: 380px) { .logo-grid { grid-template-columns: minmax(0, 1fr); } }
 </style>
@@ -491,8 +492,8 @@
 
   /* ---------------- loading ---------------- */
   var FALLBACK = {
-    videos: { settings: { theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, edgeToEdge: true }, videos: [] },
-    logos: { settings: { heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55, colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140, gap: 80, pauseOnHover: true, fadeEdges: true }, logos: [] }
+    videos: { settings: { theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, edgeToEdge: true, loop: true }, videos: [] },
+    logos: { settings: { heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55, colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140, gap: 80, pauseOnHover: true, fadeEdges: true, animation: "glide", interval: 3 }, logos: [] }
   };
 
   function loadKind(kind) {
@@ -866,6 +867,7 @@
     box.innerHTML = "";
     box.appendChild(row("Section colour", "Light for grey/white sections, dark for black", pick(s, "theme", [["light", "Light"], ["dark", "Dark"]])));
     box.appendChild(row("Videos across on desktop", "Phones always show one at a time", pick(s, "perViewDesktop", [[2, "2"], [3, "3"], [4, "4"]])));
+    box.appendChild(row("Endless loop", "Keeps going round instead of stopping at the last video", toggle(s, "loop")));
     box.appendChild(row("Soft covers", "Covers slightly muted until hovered", toggle(s, "softThumbnails")));
     box.appendChild(row("Edge-to-edge on phones", "Videos slide in from the screen edge on mobile", toggle(s, "edgeToEdge")));
     box.appendChild(row("Open links in a new tab", null, toggle(s, "openLinksInNewTab")));
@@ -880,13 +882,31 @@
     box.appendChild(row("Greyness", null, slider(s, "greyscale", 0, 100, 5, function (v) { return v + "%"; })));
     box.appendChild(row("Fade", "How see-through the logos are", slider(s, "opacity", 0.2, 1, 0.05, function (v) { return Math.round(v * 100) + "%"; })));
     box.appendChild(row("Colour on hover", null, toggle(s, "colorOnHover")));
-    box.appendChild(row("Speed", null, slider(s, "speed", 8, 120, 2, function (v) { return v; })));
-    box.appendChild(row("Direction", null, pick(s, "direction", [["left", "← Left"], ["right", "Right →"]])));
+    var anim = s.animation || "glide";
+    box.appendChild(row("Animation", {
+      glide: "Logos drift by continuously",
+      step: "Moves one logo along, pauses, repeats",
+      fade: "A still row that softly swaps to the next logos",
+      still: "No movement — a neat centred row"
+    }[anim], seg([["glide", "Glide"], ["step", "Step"], ["fade", "Fade"], ["still", "Still"]], anim, function (v) {
+      s.animation = v; changed(); renderLogoSettings();
+    })));
+    if (anim === "glide") {
+      box.appendChild(row("Speed", "Slow and calm ← → quick", slider(s, "speed", 8, 120, 2, function (v) {
+        return v < 20 ? "Very slow" : v < 40 ? "Slow" : v < 70 ? "Medium" : v < 100 ? "Fast" : "Very fast";
+      })));
+    }
+    if (anim === "step" || anim === "fade") {
+      box.appendChild(row("Time between changes", "How long each view stays before moving on", slider(s, "interval", 1.5, 8, 0.5, function (v) { return v + "s"; })));
+    }
+    if (anim === "glide" || anim === "step") {
+      box.appendChild(row("Direction", null, pick(s, "direction", [["left", "← Left"], ["right", "Right →"]])));
+    }
     box.appendChild(row("Logo size", null, slider(s, "logoHeight", 24, 80, 2, function (v) { return v + "px"; })));
     box.appendChild(row("Max logo width", "Stops long wordmarks getting huge", slider(s, "logoMaxWidth", 80, 260, 10, function (v) { return v + "px"; })));
     box.appendChild(row("Space between", null, slider(s, "gap", 32, 160, 4, function (v) { return v + "px"; })));
-    box.appendChild(row("Pause on hover", null, toggle(s, "pauseOnHover")));
-    box.appendChild(row("Soft edges", "Fade the logos out at the sides", toggle(s, "fadeEdges")));
+    if (anim !== "still") box.appendChild(row("Pause on hover", null, toggle(s, "pauseOnHover")));
+    if (anim === "glide" || anim === "step") box.appendChild(row("Soft edges", "Fade the logos out at the sides", toggle(s, "fadeEdges")));
   }
 
   /* ---------------- install tab ---------------- */
