@@ -14,7 +14,10 @@
     ".ssv-root.ssv-dark{--ssv-ink:#fafafa;--ssv-paper:#000;--ssv-muted:rgba(250,250,250,.6);--ssv-line:rgba(250,250,250,.2)}",
     ".ssv-root *,.ssv-root *::before,.ssv-root *::after{box-sizing:border-box}",
     "@media (max-width:991px){.ssv-root{--ssv-per:2.15!important;--ssv-gap:20px}}",
-    "@media (max-width:640px){.ssv-root{--ssv-per:1.12!important;--ssv-gap:14px;--ssv-radius:16px}}",
+    "@media (max-width:640px){.ssv-root{--ssv-per:1.1!important;--ssv-gap:12px;--ssv-radius:14px}}",
+    /* phones: let the strip run edge-to-edge so the next video peeks in from the screen edge,
+       while the first card still lines up with the rest of the page content */
+    "@media (max-width:640px){.ssv-root.ssv-bleed .ssv-viewport{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);padding-left:calc(50vw - 50%);padding-right:calc(50vw - 50%);scroll-padding-left:calc(50vw - 50%);scroll-padding-right:calc(50vw - 50%)}}",
     ".ssv-viewport{overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;outline:none}",
     ".ssv-viewport::-webkit-scrollbar{display:none}",
     ".ssv-viewport:focus-visible{outline:2px solid var(--ssv-ink);outline-offset:6px;border-radius:var(--ssv-radius)}",
@@ -50,7 +53,8 @@
     ".ssv-root .ssv-arrow:focus-visible{outline:2px solid var(--ssv-ink);outline-offset:3px}",
     ".ssv-root.ssv-fits .ssv-controls{display:none}",
     ".ssv-empty{padding:40px 0;text-align:center;color:var(--ssv-muted);font-size:14px}",
-    "@media (max-width:640px){.ssv-info{padding-top:12px}.ssv-controls{margin-top:22px;gap:18px}.ssv-root .ssv-arrow{width:44px;height:44px}.ssv-root .ssv-play{padding:12px}.ssv-pill{height:32px;font-size:14px}}",
+    "@media (max-width:640px){.ssv-info{padding:12px 2px 0}.ssv-root .ssv-title{font-size:18px;-webkit-line-clamp:2}.ssv-meta{font-size:12.5px;margin-top:4px}.ssv-controls{margin-top:20px;gap:16px}.ssv-arrows{gap:8px}.ssv-root .ssv-arrow{width:42px;height:42px}.ssv-arrow svg{width:18px;height:18px}.ssv-root .ssv-play{padding:10px}.ssv-pill{height:30px;padding:0 13px 0 10px;gap:7px;font-size:13px}.ssv-pill svg{width:10px;height:10px}}",
+    "@media (max-width:360px){.ssv-root{--ssv-per:1.06!important}.ssv-root .ssv-title{font-size:16px}.ssv-root .ssv-arrow{width:38px;height:38px}}",
     "@media (prefers-reduced-motion:reduce){.ssv-viewport{scroll-behavior:auto}.ssv-root *,.ssv-root *::before,.ssv-root *::after{transition:none!important}}"
   ].join("\n");
 
@@ -118,6 +122,7 @@
     var wrap = el("div", "ssv-root");
     if (settings.theme === "dark") wrap.classList.add("ssv-dark");
     if (settings.softThumbnails) wrap.classList.add("ssv-soft");
+    if (settings.edgeToEdge !== false && root.dataset.bleed !== "false") wrap.classList.add("ssv-bleed");
     wrap.style.setProperty("--ssv-per", settings.perViewDesktop || 3);
     root.appendChild(wrap);
 

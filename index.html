@@ -491,7 +491,7 @@
 
   /* ---------------- loading ---------------- */
   var FALLBACK = {
-    videos: { settings: { theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true }, videos: [] },
+    videos: { settings: { theme: "light", perViewDesktop: 3, softThumbnails: false, openLinksInNewTab: true, edgeToEdge: true }, videos: [] },
     logos: { settings: { heading: "Clients", theme: "light", style: "grey", greyscale: 100, opacity: 0.55, colorOnHover: true, speed: 32, direction: "left", logoHeight: 40, logoMaxWidth: 140, gap: 80, pauseOnHover: true, fadeEdges: true }, logos: [] }
   };
 
@@ -867,6 +867,7 @@
     box.appendChild(row("Section colour", "Light for grey/white sections, dark for black", pick(s, "theme", [["light", "Light"], ["dark", "Dark"]])));
     box.appendChild(row("Videos across on desktop", "Phones always show one at a time", pick(s, "perViewDesktop", [[2, "2"], [3, "3"], [4, "4"]])));
     box.appendChild(row("Soft covers", "Covers slightly muted until hovered", toggle(s, "softThumbnails")));
+    box.appendChild(row("Edge-to-edge on phones", "Videos slide in from the screen edge on mobile", toggle(s, "edgeToEdge")));
     box.appendChild(row("Open links in a new tab", null, toggle(s, "openLinksInNewTab")));
   }
   function renderLogoSettings() {

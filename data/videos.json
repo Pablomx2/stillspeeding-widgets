@@ -3,7 +3,8 @@
     "theme": "light",
     "perViewDesktop": 3,
     "softThumbnails": false,
-    "openLinksInNewTab": true
+    "openLinksInNewTab": true,
+    "edgeToEdge": true
   },
   "videos": [
     { "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U", "title": "ADÉLA — Nicole Kidman", "meta": "Music video" },
