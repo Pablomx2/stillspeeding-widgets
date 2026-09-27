@@ -3,9 +3,16 @@
     "theme": "light",
     "perViewDesktop": 3,
     "softThumbnails": true,
-    "openLinksInNewTab": true
+    "openLinksInNewTab": true,
+    "edgeToEdge": true,
+    "loop": true
   },
   "videos": [
+    {
+      "video": "https://www.instagram.com/p/DdWq3eqDps5/",
+      "title": "Audible - En Otras Palabras",
+      "meta": "Latino Heritage Month Campaign"
+    },
     {
       "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
       "title": "ADELA — Nicole Kidman",
