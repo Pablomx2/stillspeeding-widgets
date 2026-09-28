@@ -10,25 +10,11 @@
   },
   "videos": [
     {
-      "video": "https://www.youtube.com/watch?v=qTm4W_VRs3Q",
-      "title": "Kendrick and SZA GNX Tour Skit",
-      "meta": "Tour Assets",
-      "thumbnail": "covers/yt-qTm4W_VRs3Q.jpg",
-      "wiki": "Kendrick Lamar|SZA"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=-gm2ncZDJPU",
-      "title": "WWE 2K25: Netflix Edition",
-      "meta": "Commercial",
-      "thumbnail": "covers/yt--gm2ncZDJPU.jpg",
-      "wiki": "WWE|Netflix"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=I-rOF9se14w",
-      "title": "LISA — When I'm With You",
-      "meta": "Behind the scenes",
-      "thumbnail": "covers/yt-I-rOF9se14w.jpg",
-      "wiki": "Lisa (rapper)"
+      "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
+      "title": "ADELA — Nicole Kidman",
+      "meta": "Music video",
+      "thumbnail": "covers/yt-3sB4Iv_tM7U.jpg",
+      "wiki": "Nicole Kidman"
     },
     {
       "video": "https://www.instagram.com/p/DdCELxiBsVE/",
@@ -38,11 +24,46 @@
       "wiki": "Google|Mika Abdalla"
     },
     {
-      "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
-      "title": "ADELA — Nicole Kidman",
-      "meta": "Music video",
-      "thumbnail": "covers/yt-3sB4Iv_tM7U.jpg",
-      "wiki": "Nicole Kidman"
+      "video": "https://www.youtube.com/watch?v=-gm2ncZDJPU",
+      "title": "WWE 2K25: Netflix Edition",
+      "meta": "Commercial",
+      "thumbnail": "covers/yt--gm2ncZDJPU.jpg",
+      "wiki": "WWE|Netflix"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=NLDida6fglw",
+      "title": "Project Hail Mary",
+      "meta": "Youtube Content",
+      "thumbnail": "covers/yt-NLDida6fglw.jpg",
+      "wiki": "Project Hail Mary (film)"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=siL-RoC8haQ",
+      "title": "LISA — FUTW (Vixi Solo Version)",
+      "meta": "Behind the scenes",
+      "thumbnail": "covers/yt-siL-RoC8haQ.jpg",
+      "wiki": "Lisa (rapper)"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=qTm4W_VRs3Q",
+      "title": "Kendrick and SZA GNX Tour Skit",
+      "meta": "Tour Assets",
+      "thumbnail": "covers/yt-qTm4W_VRs3Q.jpg",
+      "wiki": "Kendrick Lamar|SZA"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=I-rOF9se14w",
+      "title": "LISA — When I'm With You",
+      "meta": "Behind the scenes",
+      "thumbnail": "covers/yt-I-rOF9se14w.jpg",
+      "wiki": "Lisa (rapper)"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=jkWDNE8Tjtc",
+      "title": "Meghan Trainor - Still Don't Care",
+      "meta": "Music Video",
+      "thumbnail": "covers/yt-jkWDNE8Tjtc.jpg",
+      "wiki": "Meghan Trainor"
     },
     {
       "video": "https://www.instagram.com/p/DcjEbZhuqd7/",
@@ -53,18 +74,11 @@
       "wiki": "Waymo|Martha Stewart"
     },
     {
-      "video": "https://www.youtube.com/watch?v=NLDida6fglw",
-      "title": "Project Hail Mary",
-      "meta": "Youtube Content",
-      "thumbnail": "covers/yt-NLDida6fglw.jpg",
-      "wiki": "Project Hail Mary (film)"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=jkWDNE8Tjtc",
-      "title": "Meghan Trainor - Still Don't Care",
-      "meta": "Music Video",
-      "thumbnail": "covers/yt-jkWDNE8Tjtc.jpg",
-      "wiki": "Meghan Trainor"
+      "video": "https://www.youtube.com/watch?v=gE-rcACBTZU",
+      "title": "Calle 24, Fuerza Regida — Noche Perfecta",
+      "meta": "Music video",
+      "thumbnail": "covers/yt-gE-rcACBTZU.jpg",
+      "wiki": "Fuerza Regida"
     },
     {
       "video": "https://www.instagram.com/p/DdWq3eqDps5/",
@@ -73,20 +87,6 @@
       "thumbnail": "covers/ig-DdWq3eqDps5.jpg",
       "coverPos": "50.0% 31.1%",
       "wiki": "Audible (service)"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=gE-rcACBTZU",
-      "title": "Calle 24, Fuerza Regida — Noche Perfecta",
-      "meta": "Music video",
-      "thumbnail": "covers/yt-gE-rcACBTZU.jpg",
-      "wiki": "Fuerza Regida"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=siL-RoC8haQ",
-      "title": "LISA — FUTW (Vixi Solo Version)",
-      "meta": "Behind the scenes",
-      "thumbnail": "covers/yt-siL-RoC8haQ.jpg",
-      "wiki": "Lisa (rapper)"
     },
     {
       "video": "https://www.youtube.com/watch?v=p4bqpSJwguw",
