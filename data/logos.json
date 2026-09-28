@@ -1,6 +1,6 @@
 {
   "settings": {
-    "heading": "Worked with",
+    "heading": "Trusted By",
     "theme": "light",
     "style": "grey",
     "greyscale": 100,
@@ -162,6 +162,22 @@
       "cy": 0.459,
       "el": 0.56,
       "er": 0.56
+    },
+    {
+      "name": "Fuerza Regida",
+      "src": "logos/fuerza-regida-teok3.png",
+      "ink": 0.47,
+      "cy": 0.466,
+      "el": 0.09,
+      "er": 0.42
+    },
+    {
+      "name": "Karol g",
+      "src": "logos/karol-g-tf8a6.png",
+      "ink": 0.27,
+      "cy": 0.522,
+      "el": 0.83,
+      "er": 0.89
     }
   ]
 }
