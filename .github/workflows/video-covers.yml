@@ -1,7 +1,7 @@
-name: Instagram covers
+name: Video covers
 
-# After the admin app publishes the video list, fetch a cover picture for any
-# Instagram post that doesn't have one yet.
+# After the admin app publishes the video list, fetch the highest-quality cover picture
+# (via yt-dlp) for any YouTube, Vimeo or Instagram item that doesn't have one yet.
 on:
   push:
     branches: [main]
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       test_url:
-        description: "Instagram link to test (dry run — nothing is saved)"
+        description: "YouTube, Vimeo or Instagram link to test (dry run — nothing is saved)"
         required: false
 
 permissions:
@@ -17,7 +17,7 @@ permissions:
   pages: write
 
 concurrency:
-  group: instagram-covers
+  group: video-covers
   cancel-in-progress: false
 
 jobs:
@@ -28,8 +28,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Install yt-dlp
+        run: python3 -m pip install --quiet --upgrade yt-dlp
       - name: Fetch missing covers
-        run: node scripts/instagram-covers.mjs
+        run: node scripts/video-covers.mjs
         env:
           TEST_URL: ${{ inputs.test_url }}
       - name: Save covers
@@ -44,7 +46,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add covers data/videos.json
-          git commit -m "Add Instagram covers"
+          git commit -m "Add video covers"
           git pull --rebase origin main
           git push
           # pushes made by Actions don't redeploy the site on their own

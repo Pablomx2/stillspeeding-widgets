@@ -634,6 +634,7 @@
     eye: '<svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>',
     eyeOff: '<svg viewBox="0 0 24 24"><path d="M4 4l16 16M9.9 5.8A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 3.9M6.1 7.9C3.8 9.6 2.5 12 2.5 12S6 18.5 12 18.5c1.5 0 2.9-.4 4.1-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
     ig: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>',
+    play: '<svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="4.5"/><path d="M10 9.2v5.6l4.8-2.8z" fill="currentColor" stroke-linejoin="round"/></svg>',
     grip: '<svg viewBox="0 0 10 16"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg>'
   };
   function b64encodeText(str) {
@@ -800,34 +801,36 @@
     });
   }
 
-  /* After publishing, GitHub fetches covers for Instagram items that don't have one
-     (see scripts/instagram-covers.mjs). Check back for a few minutes and bring them in. */
+  /* After publishing, GitHub fetches the best cover (yt-dlp) for YouTube, Vimeo and Instagram
+     items that don't have one (see scripts/video-covers.mjs). Check back for a few minutes and bring them in. */
   var coverWatch = null;
-  function missingIgCovers() {
-    return state.videos.videos.filter(function (v) { return parseVideo(v.video).type === "instagram" && !v.thumbnail && !v.preview; });
+  var COVER_SITES = { youtube: "YouTube", vimeo: "Vimeo", instagram: "Instagram" };
+  function autoCover(v) { return !!COVER_SITES[parseVideo(v.video).type]; }
+  function missingCovers() {
+    return state.videos.videos.filter(function (v) { return autoCover(v) && !v.thumbnail && !v.preview; });
   }
   function watchForCovers() {
     clearTimeout(coverWatch);
-    if (!cfg.token || !missingIgCovers().length) return;
+    if (!cfg.token || !missingCovers().length) return;
     var tries = 0;
     (function check() {
       coverWatch = setTimeout(function () {
-        if (!missingIgCovers().length || ++tries > 16) return;
+        if (!missingCovers().length || ++tries > 16) return;
         getFile("data/videos.json").then(function (f) {
           var fresh = JSON.parse(b64decodeText(f.content));
           var byUrl = {};
           (fresh.videos || []).forEach(function (v) { if (v.thumbnail) byUrl[v.video] = v.thumbnail; });
           var wasClean = !isDirty("videos");
           var added = 0;
-          missingIgCovers().forEach(function (v) { if (byUrl[v.video]) { v.thumbnail = byUrl[v.video]; added++; } });
+          missingCovers().forEach(function (v) { if (byUrl[v.video]) { v.thumbnail = byUrl[v.video]; added++; } });
           if (added) {
             remote.videos.sha = f.sha;
             remote.videos.json = wasClean ? serialize("videos") : JSON.stringify(clean("videos", fresh), null, 2) + "\n";
             // the site copy of the new cover appears once GitHub Pages redeploys — give it a moment
             setTimeout(function () { renderVideoList(); changed(); }, 45000);
-            toast(added === 1 ? "Instagram cover pulled in ✓" : added + " Instagram covers pulled in ✓");
+            toast(added === 1 ? "HD cover pulled in ✓" : added + " HD covers pulled in ✓");
           }
-          if (missingIgCovers().length) check();
+          if (missingCovers().length) check();
         }).catch(check);
       }, 15000);
     })();
@@ -846,7 +849,7 @@
   function friendlyMediaError(msg) {
     msg = String(msg || "");
     if (/no video formats|there is no video|not a video/i.test(msg)) return "This post is a photo, not a video — its picture is used as the cover.";
-    if (/private|login|log in|sign in|cookies/i.test(msg)) return "Instagram wouldn't share it — make sure the post is public.";
+    if (/private|login|log in|sign in|cookies/i.test(msg)) return "The site wouldn't share it — make sure the post or video is public.";
     return msg || "Something went wrong.";
   }
   function requestMedia(kind, url, onWaiting) {
@@ -870,15 +873,15 @@
     });
   }
 
-  // pull an Instagram post's picture right away (before publishing)
-  function fetchIgCover(v) {
-    if (v._fetching || v.thumbnail || v.preview || !cfg.token) return;
+  // pull the link's best cover picture right away (before publishing)
+  function fetchCover(v) {
+    if (v._fetching || v.thumbnail || v.preview || !cfg.token || !autoCover(v)) return;
     v._fetching = true;
     renderVideoList();
-    requestMedia("ig-cover", v.video).then(function (st) {
+    requestMedia("cover", v.video).then(function (st) {
       return getRaw(st.path).then(readAsDataURL).then(function (dataUrl) {
         if (!v.thumbnail && !v.preview) { v.thumbnail = st.path; v.preview = dataUrl; }
-        toast("Cover pulled from Instagram ✓");
+        toast("Cover pulled from " + COVER_SITES[parseVideo(v.video).type] + " ✓");
       });
     }).catch(function (e) {
       toast("Couldn't pull the cover: " + e.message, true);
@@ -1174,7 +1177,7 @@
     var info = parseVideo(v.video);
     if (v._fetching) {
       box.classList.add("fetching");
-      box.innerHTML = '<div class="fetch-anim" aria-hidden="true">' + ICON.ig + '</div><span class="fetch-label">Fetching thumbnail</span><i class="fetch-bar"></i>';
+      box.innerHTML = '<div class="fetch-anim" aria-hidden="true">' + (info.type === "instagram" ? ICON.ig : ICON.play) + '</div><span class="fetch-label">Fetching thumbnail</span><i class="fetch-bar"></i>';
       return;
     }
     var cover = v.preview || (v.thumbnail && resolveSrc(v.thumbnail));
@@ -1235,7 +1238,7 @@
   // cover picture: required-ish for Instagram, optional for everything else
   function coverControls(v, i) {
     var kind = parseVideo(v.video).type, isIg = kind === "instagram";
-    if (v._fetching) return el("div", { class: "cover-row" }, [el("span", { class: "cover-hint", text: "Pulling the cover from Instagram — this takes about a minute." })]);
+    if (v._fetching) return el("div", { class: "cover-row" }, [el("span", { class: "cover-hint", text: "Pulling the HD cover from " + COVER_SITES[kind] + " — this takes about a minute." })]);
     var input = el("input", { type: "file", accept: "image/jpeg,image/png,image/webp", hidden: "" });
     input.addEventListener("change", function () {
       var f = input.files && input.files[0];
@@ -1264,7 +1267,7 @@
       if (isIg && !cfg.token) { toast("Connect GitHub first — the app uses it to get the video.", true); openConnect(); return; }
       openFramePicker(v, i);
     } }, [el("span", { text: "Pick frame" })]));
-    if (isIg && !has && cfg.token) kids.splice(1, 0, el("button", { class: "btn btn-sm", type: "button", onclick: function () { fetchIgCover(v); } }, [
+    if (autoCover(v) && !has && cfg.token) kids.splice(1, 0, el("button", { class: "btn btn-sm", type: "button", onclick: function () { fetchCover(v); } }, [
       el("span", { text: "Fetch cover" })
     ]));
     if (has) kids.push(el("button", { class: "link-btn", type: "button", text: "Remove cover", onclick: function () {
@@ -1401,12 +1404,12 @@
       renderVideoList(state.videos.videos.indexOf(v));
       changed();
     }).catch(function () {});
+    fetchCover(v);
     if (info.type === "instagram") {
-      fetchIgCover(v);
       toast(cfg.token ? "Instagram added — pulling its cover now. Give it a title while you wait." : "Instagram added — give it a title, then Publish. The cover is pulled in automatically.");
       var t = $("#videoList .item .input.title");
       if (t) t.focus();
-    } else toast("Added — edit the title if you like, then Publish.");
+    } else toast(COVER_SITES[info.type] && cfg.token ? "Added — pulling its HD cover now. Edit the title if you like, then Publish." : "Added — edit the title if you like, then Publish.");
   });
 
   // show/hide on the site without deleting

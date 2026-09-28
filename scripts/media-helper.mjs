@@ -1,12 +1,13 @@
 // Handles requests the admin app drops into requests/*.json (runs in GitHub Actions):
-//   { rid, kind: "ig-cover", url }  → saves the Instagram post's picture to covers/ig-<code>.jpg
+//   { rid, kind: "cover", url }     → saves the link's best cover picture (yt-dlp) to covers/ — see covers.mjs
+//                                     ("ig-cover" is the older name for the same thing)
 //   { rid, kind: "video", url }     → downloads a copy of the video so the app's frame picker can scrub it
 // Results go to the "media-cache" branch (status/<rid>.json and media/<rid>.mp4), which is
 // rebuilt on every run and only keeps the last couple of hours — so big files don't pile up.
 import { readdir, readFile, writeFile, mkdir, rm, copyFile, access } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { instagramCode, findImageUrl, download } from "./instagram.mjs";
+import { saveCover } from "./covers.mjs";
 
 const run = promisify(execFile);
 const OUT = "out", OLD = "out-old", KEEP_MS = 2 * 60 * 60 * 1000;
@@ -48,17 +49,8 @@ for (const f of files) {
   const status = { rid, kind: req.kind, url: req.url, ok: false, at: Date.now() };
   try {
     if (!ALLOWED.test(String(req.url || ""))) throw new Error("Only YouTube, Vimeo and Instagram links are supported.");
-    if (req.kind === "ig-cover") {
-      const code = instagramCode(req.url);
-      if (!code) throw new Error("That isn't an Instagram post or reel link.");
-      const path = `covers/ig-${code}.jpg`;
-      if (!(await exists(path))) {
-        const url = await findImageUrl(code);
-        if (!url) throw new Error("Instagram didn't share a picture — is the post public?");
-        await mkdir("covers", { recursive: true });
-        await writeFile(path, await download(url));
-      }
-      Object.assign(status, { ok: true, path });
+    if (req.kind === "cover" || req.kind === "ig-cover") {
+      Object.assign(status, { ok: true, path: await saveCover(req.url) });
     } else if (req.kind === "video") {
       await run("yt-dlp", ["-f", FORMAT, "--no-playlist", "--max-filesize", "90M", "--no-part", "--quiet", "--no-warnings",
         "-o", `${OUT}/media/${rid}.%(ext)s`, req.url], { timeout: 5 * 60 * 1000, maxBuffer: 16 * 1024 * 1024 });
