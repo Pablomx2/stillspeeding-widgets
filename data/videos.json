@@ -10,6 +10,12 @@
   },
   "videos": [
     {
+      "video": "https://www.youtube.com/watch?v=o8U3vvXWt1o",
+      "title": "Songs to Listen to in a Wendy's Parking Lot",
+      "meta": "Commercial",
+      "thumbnail": "covers/yt-o8U3vvXWt1o.jpg"
+    },
+    {
       "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
       "title": "ADELA — Nicole Kidman",
       "meta": "Music video",
