@@ -14,10 +14,11 @@
     ".ssv-root.ssv-dark{--ssv-ink:#fafafa;--ssv-paper:#000;--ssv-muted:rgba(250,250,250,.6);--ssv-line:rgba(250,250,250,.2)}",
     ".ssv-root *,.ssv-root *::before,.ssv-root *::after{box-sizing:border-box}",
     "@media (max-width:991px){.ssv-root{--ssv-per:2.15!important;--ssv-gap:20px}}",
-    "@media (max-width:640px){.ssv-root{--ssv-per:1.1!important;--ssv-gap:12px;--ssv-radius:14px}}",
-    /* phones: let the strip run edge-to-edge so the next video peeks in from the screen edge,
-       while the first card still lines up with the rest of the page content */
-    "@media (max-width:640px){.ssv-root.ssv-bleed .ssv-viewport{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);padding-left:calc(50vw - 50%);padding-right:calc(50vw - 50%);scroll-padding-left:calc(50vw - 50%);scroll-padding-right:calc(50vw - 50%)}}",
+    /* phones: one card at a time, centred on the screen, with the neighbouring videos peeking in
+       equally on both sides. The side padding is half of the space left over by the card, so every
+       card (the first one too) lands in the middle when it snaps into place. */
+    "@media (max-width:640px){.ssv-root{--ssv-per:1!important;--ssv-gap:12px;--ssv-radius:14px;--ssv-side:7%}.ssv-viewport{padding-left:var(--ssv-side);padding-right:var(--ssv-side);scroll-padding-left:var(--ssv-side);scroll-padding-right:var(--ssv-side)}.ssv-controls{padding:0 var(--ssv-side)}}",
+    "@media (max-width:640px){.ssv-root.ssv-bleed{--ssv-side:8vw}.ssv-root.ssv-bleed .ssv-viewport{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}.ssv-root.ssv-bleed .ssv-controls{padding:0}}",
     ".ssv-viewport{overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;outline:none}",
     ".ssv-viewport::-webkit-scrollbar{display:none}",
     ".ssv-viewport:focus-visible{outline:2px solid var(--ssv-ink);outline-offset:6px;border-radius:var(--ssv-radius)}",
@@ -83,7 +84,7 @@
     "@media (prefers-reduced-motion:reduce){.ssv-modal,.ssv-modal-box{transition:none}}",
     ".ssv-empty{padding:40px 0;text-align:center;color:var(--ssv-muted);font-size:14px}",
     "@media (max-width:640px){.ssv-info{padding:12px 2px 0}.ssv-root .ssv-title{font-size:18px;-webkit-line-clamp:2}.ssv-meta{font-size:12.5px;margin-top:4px}.ssv-controls{margin-top:20px;gap:16px}.ssv-arrows{gap:8px}.ssv-root .ssv-arrow{width:42px;height:42px}.ssv-arrow svg{width:18px;height:18px}.ssv-root .ssv-play{padding:10px}.ssv-pill{height:30px;padding:0 13px 0 10px;gap:7px;font-size:13px}.ssv-pill svg{width:10px;height:10px}}",
-    "@media (max-width:360px){.ssv-root{--ssv-per:1.06!important}.ssv-root .ssv-title{font-size:16px}.ssv-root .ssv-arrow{width:38px;height:38px}}",
+    "@media (max-width:360px){.ssv-root .ssv-title{font-size:16px}.ssv-root .ssv-arrow{width:38px;height:38px}}",
     "@media (prefers-reduced-motion:reduce){.ssv-viewport{scroll-behavior:auto}.ssv-root *,.ssv-root *::before,.ssv-root *::after{transition:none!important}}"
   ].join("\n");
 
