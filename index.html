@@ -1711,8 +1711,8 @@
   }
   function addLogoItems(items) {
     var logos = state.logos.logos;
-    items.forEach(function (it) { logos.push(it); });
-    renderLogoList(logos.length - 1);
+    logos.unshift.apply(logos, items); // newest first, like videos
+    renderLogoList(0);
     changed();
   }
 
