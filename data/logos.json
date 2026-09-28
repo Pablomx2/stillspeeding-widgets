@@ -25,7 +25,8 @@
       "ink": 0.44,
       "cy": 0.45,
       "el": 1.64,
-      "er": 1.3
+      "er": 1.3,
+      "wiki": "Netflix"
     },
     {
       "name": "Google",
@@ -33,7 +34,8 @@
       "ink": 0.3,
       "cy": 0.487,
       "el": 1,
-      "er": 0.97
+      "er": 0.97,
+      "wiki": "Google"
     },
     {
       "name": "Meta Platforms",
@@ -41,7 +43,8 @@
       "ink": 0.39,
       "cy": 0.534,
       "el": 1.2,
-      "er": 1.09
+      "er": 1.09,
+      "wiki": "Meta Platforms"
     },
     {
       "name": "Starbucks",
@@ -49,7 +52,8 @@
       "ink": 0.43,
       "cy": 0.459,
       "el": 0.56,
-      "er": 0.56
+      "er": 0.56,
+      "wiki": "Starbucks"
     },
     {
       "name": "Wendy's",
@@ -57,7 +61,8 @@
       "ink": 0.69,
       "cy": 0.521,
       "el": 0.34,
-      "er": 0.36
+      "er": 0.36,
+      "wiki": "Wendy's"
     },
     {
       "name": "Adidas",
@@ -65,7 +70,8 @@
       "ink": 0.44,
       "cy": 0.647,
       "el": 0.35,
-      "er": 0.4
+      "er": 0.4,
+      "wiki": "Adidas"
     },
     {
       "name": "National Basketball Association",
@@ -73,7 +79,8 @@
       "ink": 0.45,
       "cy": 0.523,
       "el": 0.97,
-      "er": 0.92
+      "er": 0.92,
+      "wiki": "National Basketball Association"
     },
     {
       "name": "Toyota",
@@ -81,7 +88,8 @@
       "ink": 0.29,
       "cy": 0.479,
       "el": 0.92,
-      "er": 0.97
+      "er": 0.97,
+      "wiki": "Toyota"
     },
     {
       "name": "American Express",
@@ -89,7 +97,8 @@
       "ink": 1,
       "cy": 0.5,
       "el": 1,
-      "er": 0.98
+      "er": 0.98,
+      "wiki": "American Express"
     },
     {
       "name": "Karol g",
@@ -97,7 +106,8 @@
       "ink": 0.27,
       "cy": 0.522,
       "el": 0.83,
-      "er": 0.89
+      "er": 0.89,
+      "wiki": "Karol G"
     },
     {
       "name": "Audible",
@@ -105,7 +115,8 @@
       "ink": 0.22,
       "cy": 0.513,
       "el": 1.03,
-      "er": 0.63
+      "er": 0.63,
+      "wiki": "Audible (service)"
     },
     {
       "name": "Billboard",
@@ -113,7 +124,8 @@
       "ink": 0.6,
       "cy": 0.585,
       "el": 1.13,
-      "er": 1.13
+      "er": 1.13,
+      "wiki": "Billboard (magazine)"
     },
     {
       "name": "Whatsapp",
@@ -121,7 +133,8 @@
       "ink": 0.33,
       "cy": 0.529,
       "el": 1.52,
-      "er": 1.1
+      "er": 1.1,
+      "wiki": "WhatsApp"
     },
     {
       "name": "Waymo",
@@ -129,7 +142,8 @@
       "ink": 0.39,
       "cy": 0.391,
       "el": 0.54,
-      "er": 0.53
+      "er": 0.53,
+      "wiki": "Waymo"
     },
     {
       "name": "WWE",
@@ -137,7 +151,8 @@
       "ink": 0.3,
       "cy": 0.548,
       "el": 0.2,
-      "er": 0.36
+      "er": 0.36,
+      "wiki": "WWE"
     },
     {
       "name": "Hot Wheels",
@@ -145,7 +160,8 @@
       "ink": 0.31,
       "cy": 0.467,
       "el": 0.76,
-      "er": 0.35
+      "er": 0.35,
+      "wiki": "Hot Wheels"
     },
     {
       "name": "Lyft",
@@ -153,7 +169,8 @@
       "ink": 0.54,
       "cy": 0.46,
       "el": 1.37,
-      "er": 0.96
+      "er": 0.96,
+      "wiki": "Lyft"
     },
     {
       "name": "Fuerza Regida",
@@ -161,7 +178,8 @@
       "ink": 0.47,
       "cy": 0.466,
       "el": 0.09,
-      "er": 0.42
+      "er": 0.42,
+      "wiki": "Fuerza Regida"
     },
     {
       "name": "Ram",
@@ -169,7 +187,8 @@
       "ink": 0.25,
       "cy": 0.572,
       "el": 0.43,
-      "er": 0.42
+      "er": 0.42,
+      "wiki": "Ram Trucks"
     },
     {
       "name": "Kalshi",
@@ -177,7 +196,8 @@
       "ink": 0.5,
       "cy": 0.56,
       "el": 1.24,
-      "er": 1.14
+      "er": 1.14,
+      "wiki": "Kalshi"
     },
     {
       "name": "Brooks",
@@ -185,7 +205,8 @@
       "ink": 0.33,
       "cy": 0.492,
       "el": 1.04,
-      "er": 1
+      "er": 1,
+      "wiki": "Brooks Sports"
     }
   ]
 }

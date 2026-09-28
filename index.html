@@ -334,6 +334,41 @@
     .set-row { row-gap: 8px; }
   }
   @media (max-width: 380px) { .logo-grid { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ---------- reorder tools: compact view, position picker, auto-sort ---------- */
+  .panel-head { flex-wrap: wrap; }
+  .list-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .list-tools .btn { height: 34px; padding: 0 14px; font-size: 13px; }
+  .list-tools .btn[aria-pressed="true"] { background: #000; color: #fff; border-color: #000; }
+  .keep-sorted .switch { display: inline-block; }
+  .keep-sorted { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .list-hint { margin: -8px 0 14px; }
+  .pos { -webkit-appearance: none; appearance: none; height: 34px; min-width: 34px; padding: 0 20px 0 10px; border: 1.5px solid var(--line); border-radius: 300px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23000' stroke-width='1.5'/%3E%3C/svg%3E") right 8px center / 8px no-repeat; font: 700 12px/1 var(--body); font-variant-numeric: tabular-nums; cursor: pointer; }
+  .pos:hover { border-color: #000; }
+  .compact-title { display: none; min-width: 0; font-weight: 600; font-size: 14px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .compact-title small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+  .list.compact { gap: 6px; }
+  .list.compact .item { grid-template-columns: 18px 76px minmax(0, 1fr) auto; gap: 12px; padding: 8px 10px; align-items: center; }
+  .list.compact .item .thumb { width: 76px; grid-row: auto; grid-column: auto; }
+  .list.compact .thumb .kind, .list.compact .hidden-tag { display: none; }
+  .list.compact .fields { grid-row: auto; grid-column: auto; }
+  .list.compact .fields > :not(.compact-title) { display: none; }
+  .list.compact .compact-title { display: block; }
+  .list.compact .item .actions { grid-row: auto; grid-column: auto; display: flex; align-self: center; }
+  .list.compact .actions > :not(.pos) { display: none; }
+  .logo-grid.compact { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+  .logo-grid.compact .logo-card { padding: 8px; gap: 6px; }
+  .logo-grid.compact .logo-img { height: 58px; padding: 10px; }
+  .logo-grid.compact .logo-img img { max-height: 34px; }
+  .logo-grid.compact .logo-card > .input, .logo-grid.compact .bg-row, .logo-grid.compact .bg-note, .logo-grid.compact .logo-img .new { display: none; }
+  .logo-grid.compact .compact-title { display: block; font-size: 12px; }
+  .logo-grid.compact .logo-actions { justify-content: flex-start; }
+  .logo-grid.compact .logo-actions > :not(.pos) { display: none; }
+  @media (max-width: 640px) {
+    .list.compact .item { grid-template-columns: 64px minmax(0, 1fr) auto; }
+    .list.compact .item .thumb { width: 64px; }
+    .logo-grid.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
 </style>
 </head>
 <body class="booting">
@@ -384,7 +419,8 @@
       <p class="hint">YouTube and Vimeo titles fill in automatically; for Instagram just add a title — the cover is pulled in for you. New videos go to the front.</p>
     </div>
     <div class="panel">
-      <div class="panel-head"><h2>Your videos</h2><span class="hint" id="videoHint">Drag the picture to reorder · hold on phones</span></div>
+      <div class="panel-head"><h2>Your videos</h2><div class="list-tools" data-kind="videos"></div></div>
+      <p class="hint list-hint">Drag the picture to reorder (hold on phones), or pick a position number.</p>
       <div class="list" id="videoList"></div>
       <details class="more" style="margin-top:20px">
         <summary>Look &amp; feel</summary>
@@ -415,7 +451,8 @@
       </form>
     </div>
     <div class="panel">
-      <div class="panel-head"><h2>Your clients</h2><span class="hint">Drag the logo to reorder · hold on phones</span></div>
+      <div class="panel-head"><h2>Your clients</h2><div class="list-tools" data-kind="logos"></div></div>
+      <p class="hint list-hint">Drag a logo to reorder (hold on phones), or pick a position number.</p>
       <div class="logo-grid" id="logoList"></div>
       <details class="more" style="margin-top:20px">
         <summary>Look &amp; feel</summary>
@@ -617,7 +654,7 @@
 
   function clean(kind, source) {
     var d = JSON.parse(JSON.stringify(source || state[kind]));
-    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; if (l.hidden) o.hidden = true; ["ink", "cy", "el", "er"].forEach(function (k) { if (l[k] != null) o[k] = l[k]; }); return o; });
+    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; if (l.hidden) o.hidden = true; if (l.wiki) o.wiki = l.wiki; ["ink", "cy", "el", "er"].forEach(function (k) { if (l[k] != null) o[k] = l[k]; }); return o; });
     if (kind === "videos") d.videos = d.videos.map(function (v) {
       var o = { video: v.video, title: v.title || "", meta: v.meta || "" };
       if (v.link) { o.link = v.link; if (v.linkText) o.linkText = v.linkText; }
@@ -625,6 +662,7 @@
       if (v.hidden) o.hidden = true;
       if (v.coverPos) o.coverPos = v.coverPos;
       if (v.coverZoom) o.coverZoom = v.coverZoom;
+      if (v.wiki) o.wiki = v.wiki;
       return o;
     });
     return d;
@@ -1215,6 +1253,237 @@
     container.addEventListener("contextmenu", function (e) { if (s) e.preventDefault(); }); // long-press menu on phones
   }
 
+  /* ---------------- reorder tools: compact view, position picker, auto-sort ----------------
+     Auto-sort ranks by how well known each brand / artist is: Wikipedia views over the last
+     60 days, steadied by how many language editions of Wikipedia cover them (global reach, and
+     it doesn't swing with the news). Videos also count their YouTube views (via the Return
+     YouTube Dislike API) and sit Instagram (softer covers) slightly lower. The same brand or
+     artist is never placed twice in a row. Items can carry a "wiki" hint — Wikipedia article
+     title(s), "A|B" — for names that are ambiguous ("Ram" → "Ram Trucks"). Hidden items go last. */
+  var compact = { videos: lsGet("ssw-compact-videos") === "1", logos: lsGet("ssw-compact-logos") === "1" };
+  var sorting = {}, sortUndo = {}, undoTimer = {};
+  function posPicker(arr, i, rerender) {
+    var sel = el("select", { class: "pos", "aria-label": "Position", title: "Move to position…" });
+    for (var k = 0; k < arr.length; k++) sel.appendChild(el("option", { value: String(k), text: "#" + (k + 1) }));
+    sel.value = String(i);
+    sel.addEventListener("change", function () { var to = +sel.value; move(arr, i, to); rerender(to); changed(); });
+    return sel;
+  }
+  function applyCompact(kind) { $(kind === "videos" ? "#videoList" : "#logoList").classList.toggle("compact", !!compact[kind]); }
+  function renderTools(kind) {
+    var box = $('.list-tools[data-kind="' + kind + '"]');
+    if (!box || !state[kind]) return;
+    box.innerHTML = "";
+    box.appendChild(el("button", { class: "btn", type: "button", "aria-pressed": String(!!compact[kind]), title: "Show everything small so it's easy to drag into order", onclick: function () {
+      compact[kind] = !compact[kind];
+      lsSet("ssw-compact-" + kind, compact[kind] ? "1" : null);
+      applyCompact(kind);
+      renderTools(kind);
+    } }, [el("span", { text: "Compact" })]));
+    box.appendChild(el("button", { class: "btn", type: "button", disabled: sorting[kind] ? "" : null,
+      title: sortUndo[kind] ? "Put the list back how it was" : "Order by how well known each brand or artist is",
+      onclick: function () { if (sortUndo[kind]) undoSort(kind); else autoSort(kind); } }, [
+      el("span", { text: sorting[kind] ? "Sorting…" : sortUndo[kind] ? "Undo sort" : "Auto-sort" })
+    ]));
+    var s = state[kind].settings;
+    box.appendChild(el("label", { class: "keep-sorted", title: "New additions are placed by popularity instead of at the top" }, [
+      el("span", { text: "Keep sorted" }),
+      el("span", { class: "switch" }, [
+        el("input", { type: "checkbox", checked: s.keepSorted ? "" : null, onchange: function (e) {
+          if (e.target.checked) s.keepSorted = true; else delete s.keepSorted;
+          changed();
+          if (s.keepSorted) autoSort(kind);
+        } }),
+        el("i")
+      ])
+    ]));
+  }
+  function autoSort(kind, quiet) {
+    var arr = state[kind][kind];
+    if (arr.length < 2 || sorting[kind]) return;
+    sorting[kind] = true;
+    renderTools(kind);
+    if (!quiet) toast("Ranking by popularity…");
+    rankItems(kind, arr.slice()).then(function (ranked) {
+      var before = arr.slice();
+      // anything added while ranking stays at the top
+      var added = arr.filter(function (x) { return ranked.indexOf(x) < 0; });
+      arr.splice.apply(arr, [0, arr.length].concat(added, ranked.filter(function (x) { return arr.indexOf(x) > -1; })));
+      var same = before.every(function (x, i) { return x === arr[i]; });
+      if (!quiet && !same) {
+        sortUndo[kind] = before;
+        clearTimeout(undoTimer[kind]);
+        undoTimer[kind] = setTimeout(function () { delete sortUndo[kind]; renderTools(kind); }, 20000);
+      }
+      (kind === "videos" ? renderVideoList : renderLogoList)();
+      if (!same) changed();
+      if (!quiet) toast(same ? "Already in the best order ✓" : "Sorted by popularity — press Publish to update your site.");
+    }).catch(function () {
+      toast("Couldn't reach Wikipedia to rank them — try again in a minute.", true);
+    }).then(function () {
+      sorting[kind] = false;
+      renderTools(kind);
+    });
+  }
+  function undoSort(kind) {
+    var arr = state[kind][kind], before = sortUndo[kind];
+    delete sortUndo[kind];
+    var kept = before.filter(function (x) { return arr.indexOf(x) > -1; });
+    var added = arr.filter(function (x) { return before.indexOf(x) < 0; });
+    arr.splice.apply(arr, [0, arr.length].concat(added, kept));
+    (kind === "videos" ? renderVideoList : renderLogoList)();
+    renderTools(kind);
+    changed();
+    toast("Order restored.");
+  }
+
+  var POP_LS = "ssw-popularity", POP_TTL = 3 * 864e5;
+  var pop = (function () { try { return JSON.parse(lsGet(POP_LS)) || {}; } catch (e) { return {}; } })();
+  ["names", "titles", "yt"].forEach(function (k) { pop[k] = pop[k] || {}; });
+  function fresh(entry, ttl) { return entry && Date.now() - entry.at < (ttl || POP_TTL); }
+  function savePop() { try { lsSet(POP_LS, JSON.stringify(pop)); } catch (e) {} }
+  var KIND = /compan|brand|business|corporat|manufactur|marque|service|magazine|league|association|singer|rapper|band|musician|musical group|duo|artist|television|network|website|app\b|platform|retailer|chain|franchise|toy|automobile|truck|vehicle|record label|entertainment|promotion|studio|actress|actor|film|video game|tour|album|song|streaming|messaging|airline|conglomerate|footwear|shoe|sportswear|clothing|fashion|beverage|coffee|restaurant|subsidiary|division|autonomous|prediction|exchange|financial|payment|novel|series|group|model|influencer|personality|comedian|youtuber|dj\b|producer|composer|director|host|author/i;
+  var NOT_KIND = /disambiguation|family name|given name|surname|edition|tactic|term|word|concept|genus|species/i;
+  var WP = "https://en.wikipedia.org/w/api.php?";
+  function wmJSON(url, tries) {
+    tries = tries || 0;
+    return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function (e) {
+      if (tries >= 3) throw e;
+      return new Promise(function (res) { setTimeout(res, 1200 * (tries + 1)); }).then(function () { return wmJSON(url, tries + 1); });
+    });
+  }
+  function inBatches(list, size, fn) {
+    var chain = Promise.resolve();
+    for (var i = 0; i < list.length; i += size) (function (b) { chain = chain.then(function () { return fn(b); }); })(list.slice(i, i + size));
+    return chain;
+  }
+  function uniq(a) { return a.filter(function (x, i) { return x && a.indexOf(x) === i; }); }
+  // "Calle 24, Fuerza Regida — Noche Perfecta" → ["Calle 24", "Fuerza Regida", "Noche Perfecta"]
+  function videoNames(title) {
+    return uniq(String(title || "").split(/\s+(?:x|×|&|and|feat\.?|ft\.?|with|vs\.?)\s+|\s+[—–-]\s+|[,:|()[\]]/i).map(function (s) { return s.trim(); })
+      .filter(function (s) { return s.length > 1 && !/^(official|commercial|music video|trailer|teaser|behind the scenes|bts|edition|campaign|live)$/i.test(s); }));
+  }
+  // names → Wikidata ids that really are that brand / artist
+  function namesToIds(names) {
+    var out = {};
+    var todo = names.filter(function (n) { var c = pop.names[norm(n)]; if (fresh(c, POP_TTL * 10)) { out[norm(n)] = c.ids; return false; } return true; });
+    return inBatches(todo, 1, function (b) {
+      var n = b[0];
+      return wmJSON(WD + qs({ action: "wbsearchentities", search: n, language: "en", type: "item", limit: "12" })).then(function (d) {
+        out[norm(n)] = (d.search || []).filter(function (x) {
+          var desc = x.description || "";
+          return (norm(x.label) === norm(n) || norm(x.match && x.match.text) === norm(n)) && KIND.test(desc) && !NOT_KIND.test(desc);
+        }).map(function (x) { return x.id; });
+        pop.names[norm(n)] = { ids: out[norm(n)], at: Date.now() };
+      }).catch(function () { out[norm(n)] = []; });
+    }).then(function () { return out; });
+  }
+  // Wikipedia titles (the "wiki" hints) → Wikidata ids
+  function titlesToIds(titles) {
+    var out = {};
+    return inBatches(titles, 50, function (b) {
+      return wmJSON(WP + qs({ action: "query", prop: "pageprops", ppprop: "wikibase_item", redirects: "1", titles: b.join("|") })).then(function (d) {
+        var map = {};
+        ((d.query && d.query.normalized) || []).concat((d.query && d.query.redirects) || []).forEach(function (r) { map[r.to] = map[r.from] || r.from; });
+        Object.keys((d.query && d.query.pages) || {}).forEach(function (k) {
+          var p = d.query.pages[k], id = p.pageprops && p.pageprops.wikibase_item;
+          var asked = p.title; while (map[asked]) asked = map[asked];
+          if (id) out[asked] = id;
+        });
+      });
+    }).then(function () { return out; });
+  }
+  // Wikidata ids → { title, views, reach } (reach = number of Wikipedias covering it)
+  function idStats(ids) {
+    var out = {}, todo = [];
+    ids.forEach(function (id) { if (fresh(pop.titles[id])) out[id] = pop.titles[id]; else todo.push(id); });
+    var titleOf = {};
+    return inBatches(todo, 50, function (b) {
+      return wmJSON(WD + qs({ action: "wbgetentities", ids: b.join("|"), props: "sitelinks" })).then(function (e) {
+        b.forEach(function (id) {
+          var ent = e.entities && e.entities[id], links = (ent && ent.sitelinks) || {};
+          var reach = Object.keys(links).filter(function (k) { return /wiki$/.test(k) && k !== "commonswiki" && k !== "specieswiki"; }).length;
+          out[id] = { title: links.enwiki && links.enwiki.title, views: 0, reach: reach, at: Date.now() };
+          if (out[id].title) titleOf[out[id].title] = id;
+        });
+      });
+    }).then(function () {
+      var titles = Object.keys(titleOf);
+      return inBatches(titles, 50, function (b) {
+        function page(cont) {
+          return wmJSON(WP + qs(Object.assign({ action: "query", prop: "pageviews", pvipdays: "60", titles: b.join("|") }, cont || {}))).then(function (d) {
+            var norms = {};
+            ((d.query && d.query.normalized) || []).forEach(function (r) { norms[r.to] = r.from; });
+            Object.keys((d.query && d.query.pages) || {}).forEach(function (k) {
+              var p = d.query.pages[k], id = titleOf[norms[p.title] || p.title];
+              if (id && p.pageviews) out[id].views = Object.keys(p.pageviews).reduce(function (s, day) { return s + (p.pageviews[day] || 0); }, 0);
+            });
+            if (d.continue) return page(d.continue);
+          });
+        }
+        return page();
+      });
+    }).then(function () {
+      todo.forEach(function (id) { pop.titles[id] = out[id]; });
+      return out;
+    });
+  }
+  function ytViews(items) {
+    var out = {};
+    return Promise.all(items.map(function (v) {
+      var info = parseVideo(v.video);
+      if (info.type !== "youtube") return null;
+      var c = pop.yt[info.id];
+      if (fresh(c)) { out[v.video] = c.views; return null; }
+      return fetch("https://returnyoutubedislikeapi.com/votes?videoId=" + info.id).then(function (r) { return r.json(); }).then(function (d) {
+        out[v.video] = d.viewCount || 0;
+        pop.yt[info.id] = { views: out[v.video], at: Date.now() };
+      }).catch(function () {});
+    })).then(function () { return out; });
+  }
+  function rankItems(kind, arr) {
+    var need = arr.map(function (it) {
+      var hint = String(it.wiki || "").split("|").map(function (t) { return t.trim(); }).filter(Boolean);
+      return hint.length ? { titles: hint, names: [] } : { titles: [], names: kind === "logos" ? [it.name || ""] : videoNames(it.title) };
+    });
+    var names = uniq([].concat.apply([], need.map(function (n) { return n.names; })));
+    var titles = uniq([].concat.apply([], need.map(function (n) { return n.titles; })));
+    return Promise.all([namesToIds(names), titlesToIds(titles), kind === "videos" ? ytViews(arr) : {}]).then(function (r) {
+      var byName = r[0], byTitle = r[1], yt = r[2];
+      need.forEach(function (n) {
+        n.ids = uniq(n.titles.map(function (t) { return byTitle[t]; }).concat([].concat.apply([], n.names.map(function (x) { return byName[norm(x)] || []; }))));
+      });
+      return idStats(uniq([].concat.apply([], need.map(function (n) { return n.ids; })))).then(function (stats) {
+        savePop();
+        var scored = arr.map(function (it, i) {
+          var best = null, bestScore = 0;
+          need[i].ids.forEach(function (id) {
+            var st = stats[id];
+            if (!st) return;
+            var sc = Math.log10(st.views + 10) + 1.5 * Math.log10(st.reach + 1);
+            if (sc > bestScore) { bestScore = sc; best = id; }
+          });
+          var score = bestScore;
+          if (kind === "videos") {
+            score += 0.12 * Math.log10((yt[it.video] || 0) + 10);
+            if (parseVideo(it.video).type === "instagram") score -= 0.25;
+          }
+          if (it.hidden) score -= 1000;
+          return { it: it, score: score, key: best || norm(it.name || it.title), i: i };
+        });
+        scored.sort(function (a, b) { return b.score - a.score || a.i - b.i; });
+        // never the same brand / artist twice in a row
+        var out = [];
+        while (scored.length) {
+          var prev = out.length ? out[out.length - 1].key : null, k = 0;
+          while (k < scored.length && scored[k].key === prev && !scored[k].it.hidden) k++;
+          out.push(scored.splice(k < scored.length ? k : 0, 1)[0]);
+        }
+        return out.map(function (x) { return x.it; });
+      });
+    });
+  }
+
   /* ---------------- videos ---------------- */
   function parseVideo(url) {
     url = (url || "").trim();
@@ -1265,6 +1534,7 @@
       var linkText = el("input", { class: "input", type: "text", value: v.linkText || "", placeholder: "Link label (e.g. View)", "aria-label": "Link label", oninput: bind("linkText") });
       linkText.hidden = !v.link;
       var fields = el("div", { class: "fields" }, [
+        el("div", { class: "compact-title" }, [v.title || "Untitled", el("small", { text: v.meta || parseVideo(v.video).type })]),
         el("input", { class: "input title", type: "text", value: v.title || "", placeholder: "Title", "aria-label": "Title", oninput: bind("title") }),
         el("input", { class: "input", type: "text", value: v.meta || "", placeholder: "Small line under the title (e.g. Music video)", "aria-label": "Subtitle", oninput: bind("meta") }),
         el("div", { class: "row" }, [
@@ -1275,6 +1545,7 @@
         el("div", { class: "src-line" }, [el("a", { href: v.video, target: "_blank", rel: "noopener", text: v.video })])
       ]);
       var actions = el("div", { class: "actions" }, [
+        posPicker(vids, i, renderVideoList),
         el("button", { class: "icon-btn", type: "button", title: "Move up", "aria-label": "Move up", html: ICON.up, disabled: i === 0 ? "" : null, onclick: function () { move(vids, i, i - 1); renderVideoList(i - 1); changed(); } }),
         el("button", { class: "icon-btn", type: "button", title: "Move down", "aria-label": "Move down", html: ICON.down, disabled: i === vids.length - 1 ? "" : null, onclick: function () { move(vids, i, i + 1); renderVideoList(i + 1); changed(); } }),
         hideButton(v, "video", renderVideoList, i),
@@ -1448,6 +1719,8 @@
     if (info.type === "instagram") url = "https://www.instagram.com/" + (info.kind === "reel" ? "reel" : "p") + "/" + info.code + "/";
     var v = { video: url, title: "", meta: info.type === "instagram" ? (info.kind === "reel" ? "Instagram reel" : "Instagram post") : "" };
     state.videos.videos.unshift(v);
+    // "Keep sorted": place it once its title has filled in
+    if (state.videos.settings.keepSorted) setTimeout(function () { autoSort("videos", true); }, 2500);
     input.value = "";
     renderVideoList(0);
     changed();
@@ -1497,10 +1770,12 @@
       ]);
       var card = el("div", { class: "logo-card" + (i === flashIndex ? " flash" : "") + (l.hidden ? " is-hidden" : ""), "data-i": i }, [
         imgBox,
+        el("div", { class: "compact-title", text: l.name || "Client" }),
         backgroundControl(l, i, imgBox),
         el("input", { class: "input", type: "text", value: l.name || "", placeholder: "Client name", "aria-label": "Client name", oninput: function (e) { l.name = e.target.value; changed(); } }),
         el("input", { class: "input", type: "url", inputmode: "url", value: l.link || "", placeholder: "Optional link", "aria-label": "Optional link", oninput: function (e) { l.link = e.target.value; changed(); } }),
         el("div", { class: "logo-actions" }, [
+          posPicker(logos, i, renderLogoList),
           el("button", { class: "icon-btn", type: "button", title: "Move earlier", "aria-label": "Move earlier", html: ICON.left, disabled: i === 0 ? "" : null, onclick: function () { move(logos, i, i - 1); renderLogoList(i - 1); changed(); } }),
           el("button", { class: "icon-btn", type: "button", title: "Move later", "aria-label": "Move later", html: ICON.right, disabled: i === logos.length - 1 ? "" : null, onclick: function () { move(logos, i, i + 1); renderLogoList(i + 1); changed(); } }),
           hideButton(l, "logo", renderLogoList, i),
@@ -1714,6 +1989,7 @@
     logos.unshift.apply(logos, items); // newest first, like videos
     renderLogoList(0);
     changed();
+    if (state.logos.settings.keepSorted) autoSort("logos", true);
   }
 
   // Remove / Outside only / Keep switch under each newly added logo
@@ -2389,6 +2665,7 @@
     if (!isDirty("videos")) watchForCovers();
     renderVideoList(); renderLogoList();
     renderVideoSettings(); renderLogoSettings();
+    ["videos", "logos"].forEach(function (k) { applyCompact(k); renderTools(k); });
     if (window.innerWidth < 700) $('#deviceSeg button[data-v="phone"]').click();
     var initial = (location.hash || "").slice(1);
     setTab(["videos", "logos", "install"].indexOf(initial) > -1 ? initial : "videos");
