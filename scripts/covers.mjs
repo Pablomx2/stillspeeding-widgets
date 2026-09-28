@@ -56,8 +56,9 @@ export async function saveCover(url) {
   let ytErr = null;
   try {
     const p = await viaYtDlp(url, info.name);
-    if (p) return p;
+    if (p) { console.log(`  ${info.name}: got the cover with yt-dlp`); return p; }
   } catch (e) { ytErr = e; }
+  console.log(`  ${info.name}: yt-dlp couldn't get it${ytErr ? ` (${String(ytErr.stderr || ytErr.message).trim().split("\n").pop().slice(0, 200)})` : ""} — using the fallback`);
 
   const path = `${DIR}/${info.name}.jpg`;
   if (info.type === "youtube") {
