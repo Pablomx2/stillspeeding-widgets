@@ -20,193 +20,193 @@
   },
   "logos": [
     {
-      "name": "Netflix",
-      "src": "logos/netflix-f1pwz.svg",
-      "ink": 0.44,
-      "cy": 0.45,
-      "el": 1.64,
-      "er": 1.3,
-      "wiki": "Netflix"
-    },
-    {
       "name": "Google",
       "src": "logos/google-f3j7b.svg",
+      "wiki": "Google",
       "ink": 0.3,
       "cy": 0.487,
       "el": 1,
-      "er": 0.97,
-      "wiki": "Google"
-    },
-    {
-      "name": "Meta Platforms",
-      "src": "logos/meta-platforms-f35ld.svg",
-      "ink": 0.39,
-      "cy": 0.534,
-      "el": 1.2,
-      "er": 1.09,
-      "wiki": "Meta Platforms"
-    },
-    {
-      "name": "Starbucks",
-      "src": "logos/starbucks-sdnan.svg",
-      "ink": 0.43,
-      "cy": 0.459,
-      "el": 0.56,
-      "er": 0.56,
-      "wiki": "Starbucks"
-    },
-    {
-      "name": "Wendy's",
-      "src": "logos/wendys-ti5bx.png",
-      "ink": 0.69,
-      "cy": 0.521,
-      "el": 0.34,
-      "er": 0.36,
-      "wiki": "Wendy's"
-    },
-    {
-      "name": "Adidas",
-      "src": "logos/adidas-f827t.svg",
-      "ink": 0.44,
-      "cy": 0.647,
-      "el": 0.35,
-      "er": 0.4,
-      "wiki": "Adidas"
-    },
-    {
-      "name": "National Basketball Association",
-      "src": "logos/national-basketball-association-ftmay.png",
-      "ink": 0.45,
-      "cy": 0.523,
-      "el": 0.97,
-      "er": 0.92,
-      "wiki": "National Basketball Association"
-    },
-    {
-      "name": "Toyota",
-      "src": "logos/toyota-f1zvu.png",
-      "ink": 0.29,
-      "cy": 0.479,
-      "el": 0.92,
-      "er": 0.97,
-      "wiki": "Toyota"
-    },
-    {
-      "name": "American Express",
-      "src": "logos/american-express-f7emf.png",
-      "ink": 1,
-      "cy": 0.5,
-      "el": 1,
-      "er": 0.98,
-      "wiki": "American Express"
-    },
-    {
-      "name": "Karol g",
-      "src": "logos/karol-g-tf8a6.png",
-      "ink": 0.27,
-      "cy": 0.522,
-      "el": 0.83,
-      "er": 0.89,
-      "wiki": "Karol G"
-    },
-    {
-      "name": "Audible",
-      "src": "logos/audible-f2nbv.svg",
-      "ink": 0.22,
-      "cy": 0.513,
-      "el": 1.03,
-      "er": 0.63,
-      "wiki": "Audible (service)"
-    },
-    {
-      "name": "Billboard",
-      "src": "logos/billboard-f2yfj.svg",
-      "ink": 0.6,
-      "cy": 0.585,
-      "el": 1.13,
-      "er": 1.13,
-      "wiki": "Billboard (magazine)"
+      "er": 0.97
     },
     {
       "name": "Whatsapp",
       "src": "logos/whatsapp-f3c7y.svg",
+      "wiki": "WhatsApp",
       "ink": 0.33,
       "cy": 0.529,
       "el": 1.52,
-      "er": 1.1,
-      "wiki": "WhatsApp"
+      "er": 1.1
     },
     {
-      "name": "Waymo",
-      "src": "logos/waymo-f7o7i.svg",
-      "ink": 0.39,
-      "cy": 0.391,
-      "el": 0.54,
-      "er": 0.53,
-      "wiki": "Waymo"
+      "name": "Netflix",
+      "src": "logos/netflix-f1pwz.svg",
+      "wiki": "Netflix",
+      "ink": 0.44,
+      "cy": 0.45,
+      "el": 1.64,
+      "er": 1.3
+    },
+    {
+      "name": "Toyota",
+      "src": "logos/toyota-f1zvu.png",
+      "wiki": "Toyota",
+      "ink": 0.29,
+      "cy": 0.479,
+      "el": 0.92,
+      "er": 0.97
     },
     {
       "name": "WWE",
       "src": "logos/wwe-f515j.svg",
+      "wiki": "WWE",
       "ink": 0.3,
       "cy": 0.548,
       "el": 0.2,
-      "er": 0.36,
-      "wiki": "WWE"
+      "er": 0.36
     },
     {
-      "name": "Hot Wheels",
-      "src": "logos/hot-wheels-ftxke.svg",
-      "ink": 0.31,
-      "cy": 0.467,
-      "el": 0.76,
-      "er": 0.35,
-      "wiki": "Hot Wheels"
+      "name": "Meta Platforms",
+      "src": "logos/meta-platforms-f35ld.svg",
+      "wiki": "Meta Platforms",
+      "ink": 0.39,
+      "cy": 0.534,
+      "el": 1.2,
+      "er": 1.09
     },
     {
-      "name": "Lyft",
-      "src": "logos/lyft-sd6g2.svg",
-      "ink": 0.54,
-      "cy": 0.46,
-      "el": 1.37,
-      "er": 0.96,
-      "wiki": "Lyft"
+      "name": "National Basketball Association",
+      "src": "logos/national-basketball-association-ftmay.png",
+      "wiki": "National Basketball Association",
+      "ink": 0.45,
+      "cy": 0.523,
+      "el": 0.97,
+      "er": 0.92
+    },
+    {
+      "name": "Adidas",
+      "src": "logos/adidas-f827t.svg",
+      "wiki": "Adidas",
+      "ink": 0.44,
+      "cy": 0.647,
+      "el": 0.35,
+      "er": 0.4
+    },
+    {
+      "name": "Starbucks",
+      "src": "logos/starbucks-sdnan.svg",
+      "wiki": "Starbucks",
+      "ink": 0.43,
+      "cy": 0.459,
+      "el": 0.56,
+      "er": 0.56
     },
     {
       "name": "Fuerza Regida",
       "src": "logos/fuerza-regida-teok3.png",
+      "wiki": "Fuerza Regida",
       "ink": 0.47,
       "cy": 0.466,
       "el": 0.09,
-      "er": 0.42,
-      "wiki": "Fuerza Regida"
+      "er": 0.42
+    },
+    {
+      "name": "Karol g",
+      "src": "logos/karol-g-tf8a6.png",
+      "wiki": "Karol G",
+      "ink": 0.27,
+      "cy": 0.522,
+      "el": 0.83,
+      "er": 0.89
+    },
+    {
+      "name": "Billboard",
+      "src": "logos/billboard-f2yfj.svg",
+      "wiki": "Billboard (magazine)",
+      "ink": 0.6,
+      "cy": 0.585,
+      "el": 1.13,
+      "er": 1.13
+    },
+    {
+      "name": "American Express",
+      "src": "logos/american-express-f7emf.png",
+      "wiki": "American Express",
+      "ink": 1,
+      "cy": 0.5,
+      "el": 1,
+      "er": 0.98
+    },
+    {
+      "name": "Waymo",
+      "src": "logos/waymo-f7o7i.svg",
+      "wiki": "Waymo",
+      "ink": 0.39,
+      "cy": 0.391,
+      "el": 0.54,
+      "er": 0.53
+    },
+    {
+      "name": "Wendy's",
+      "src": "logos/wendys-ti5bx.png",
+      "wiki": "Wendy's",
+      "ink": 0.69,
+      "cy": 0.521,
+      "el": 0.34,
+      "er": 0.36
+    },
+    {
+      "name": "Hot Wheels",
+      "src": "logos/hot-wheels-ftxke.svg",
+      "wiki": "Hot Wheels",
+      "ink": 0.31,
+      "cy": 0.467,
+      "el": 0.76,
+      "er": 0.35
     },
     {
       "name": "Ram",
       "src": "logos/ram-f24zp.svg",
+      "wiki": "Ram Trucks",
       "ink": 0.25,
       "cy": 0.572,
       "el": 0.43,
-      "er": 0.42,
-      "wiki": "Ram Trucks"
+      "er": 0.42
+    },
+    {
+      "name": "Lyft",
+      "src": "logos/lyft-sd6g2.svg",
+      "wiki": "Lyft",
+      "ink": 0.54,
+      "cy": 0.46,
+      "el": 1.37,
+      "er": 0.96
     },
     {
       "name": "Kalshi",
       "src": "logos/kalshi-f6yw7.svg",
+      "wiki": "Kalshi",
       "ink": 0.5,
       "cy": 0.56,
       "el": 1.24,
-      "er": 1.14,
-      "wiki": "Kalshi"
+      "er": 1.14
     },
     {
       "name": "Brooks",
       "src": "logos/brooks-f89ql.svg",
+      "wiki": "Brooks Sports",
       "ink": 0.33,
       "cy": 0.492,
       "el": 1.04,
-      "er": 1,
-      "wiki": "Brooks Sports"
+      "er": 1
+    },
+    {
+      "name": "Audible",
+      "src": "logos/audible-f2nbv.svg",
+      "wiki": "Audible (service)",
+      "ink": 0.22,
+      "cy": 0.513,
+      "el": 1.03,
+      "er": 0.63
     }
   ]
 }
