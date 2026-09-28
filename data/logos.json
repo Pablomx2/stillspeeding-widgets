@@ -100,14 +100,6 @@
       "er": 0.36
     },
     {
-      "name": "Starbucks",
-      "src": "logos/starbucks-f6nu4.svg",
-      "ink": 0.43,
-      "cy": 0.459,
-      "el": 0.56,
-      "er": 0.56
-    },
-    {
       "name": "Kalshi",
       "src": "logos/kalshi-f6yw7.svg",
       "ink": 0.5,
@@ -154,6 +146,22 @@
       "cy": 0.467,
       "el": 0.76,
       "er": 0.35
+    },
+    {
+      "name": "Lyft",
+      "src": "logos/lyft-sd6g2.svg",
+      "ink": 0.54,
+      "cy": 0.46,
+      "el": 1.37,
+      "er": 0.96
+    },
+    {
+      "name": "Starbucks",
+      "src": "logos/starbucks-sdnan.svg",
+      "ink": 0.43,
+      "cy": 0.459,
+      "el": 0.56,
+      "er": 0.56
     }
   ]
 }
