@@ -1,8 +1,9 @@
 // Handles requests the admin app drops into requests/*.json (runs in GitHub Actions):
-//   { rid, kind: "cover", url }     → saves the link's best cover picture (yt-dlp) to covers/ — see covers.mjs
+//   { rid, kind: "cover", url }     → gets the link's biggest cover picture (see covers.mjs); the app
+//                                     reads it from media-cache and uploads it with the next Publish
 //                                     ("ig-cover" is the older name for the same thing)
 //   { rid, kind: "video", url }     → downloads a copy of the video so the app's frame picker can scrub it
-// Results go to the "media-cache" branch (status/<rid>.json and media/<rid>.mp4), which is
+// Results go to the "media-cache" branch (status/<rid>.json, media/<rid>.mp4, covers/…), which is
 // rebuilt on every run and only keeps the last couple of hours — so big files don't pile up.
 import { readdir, readFile, writeFile, mkdir, rm, copyFile, access } from "node:fs/promises";
 import { execFile } from "node:child_process";
@@ -26,6 +27,7 @@ const shortError = (e) => String((e && (e.stderr || e.message)) || e).split("\n"
 
 await mkdir(`${OUT}/status`, { recursive: true });
 await mkdir(`${OUT}/media`, { recursive: true });
+await mkdir(`${OUT}/covers`, { recursive: true });
 
 // keep recent results from the previous cache
 if (await exists(`${OLD}/status`)) {
@@ -50,7 +52,8 @@ for (const f of files) {
   try {
     if (!ALLOWED.test(String(req.url || ""))) throw new Error("Only YouTube, Vimeo and Instagram links are supported.");
     if (req.kind === "cover" || req.kind === "ig-cover") {
-      Object.assign(status, { ok: true, path: await saveCover(req.url) });
+      const file = (await saveCover(req.url, `${OUT}/covers`)).slice(OUT.length + 1);
+      Object.assign(status, { ok: true, file, path: file });
     } else if (req.kind === "video") {
       await run("yt-dlp", ["-f", FORMAT, "--no-playlist", "--max-filesize", "90M", "--no-part", "--quiet", "--no-warnings",
         "-o", `${OUT}/media/${rid}.%(ext)s`, req.url], { timeout: 5 * 60 * 1000, maxBuffer: 16 * 1024 * 1024 });

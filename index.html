@@ -866,22 +866,51 @@
             if (st.ok) resolve(st); else reject(new Error(friendlyMediaError(st.error)));
           }, function () {
             if (Date.now() - start > 5 * 60 * 1000) reject(new Error("GitHub is taking too long — try again in a minute."));
-            else setTimeout(check, 4000);
+            else setTimeout(check, 2000);
           });
         })();
       });
     });
   }
 
-  // pull the link's best cover picture right away (before publishing)
+  /* YouTube and Vimeo let the browser read their pictures directly, so their covers arrive
+     instantly at the biggest size offered (YouTube 1280×720, Vimeo 1920px — what yt-dlp would pick).
+     Instagram goes through the media helper. Either way the picture is uploaded with the next Publish. */
+  function getImage(u) {
+    return fetch(u).then(function (r) { if (!r.ok) throw new Error("not found"); return r.blob(); })
+      .then(function (b) { if (!/^image\//.test(b.type) || b.size < 2000) throw new Error("not a picture"); return b; });
+  }
+  function directCover(v) {
+    var info = parseVideo(v.video);
+    if (info.type === "youtube") {
+      return ["maxresdefault", "sddefault", "hqdefault"].reduce(function (p, size) {
+        return p.catch(function () { return getImage("https://i.ytimg.com/vi/" + info.id + "/" + size + ".jpg"); });
+      }, Promise.reject()).then(function (b) { return { blob: b, name: "yt-" + info.id }; });
+    }
+    if (info.type === "vimeo") {
+      return fetch("https://vimeo.com/api/oembed.json?url=" + encodeURIComponent(v.video)).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.thumbnail_url) throw new Error("Vimeo didn't share a picture.");
+        return getImage(d.thumbnail_url.replace(/_\d+(x\d+)?(?=\?|$)/, "_1920")).catch(function () { return getImage(d.thumbnail_url); });
+      }).then(function (b) { return { blob: b, name: "vimeo-" + info.id }; });
+    }
+    return null;
+  }
+  function canFetchCover(v) { return autoCover(v) && (cfg.token || parseVideo(v.video).type !== "instagram"); }
   function fetchCover(v) {
-    if (v._fetching || v.thumbnail || v.preview || !cfg.token || !autoCover(v)) return;
+    if (v._fetching || v.thumbnail || v.preview || !canFetchCover(v)) return;
+    var site = COVER_SITES[parseVideo(v.video).type];
     v._fetching = true;
     renderVideoList();
-    requestMedia("cover", v.video).then(function (st) {
-      return getRaw(st.path).then(readAsDataURL).then(function (dataUrl) {
-        if (!v.thumbnail && !v.preview) { v.thumbnail = st.path; v.preview = dataUrl; }
-        toast("Cover pulled from " + COVER_SITES[parseVideo(v.video).type] + " ✓");
+    var got = directCover(v) || requestMedia("cover", v.video).then(function (st) {
+      return getRaw(st.file, "media-cache").then(function (b) { return { blob: b, path: st.file }; });
+    });
+    got.then(function (c) {
+      return readAsDataURL(c.blob).then(function (dataUrl) {
+        if (v.thumbnail || v.preview) return;
+        v.thumbnail = c.path || "covers/" + c.name + (/png/.test(c.blob.type) ? ".png" : /webp/.test(c.blob.type) ? ".webp" : ".jpg");
+        v.preview = dataUrl;
+        v.pending = dataUrl.split(",")[1];
+        toast("HD cover pulled from " + site + " ✓ — press Publish to update your site.");
       });
     }).catch(function (e) {
       toast("Couldn't pull the cover: " + e.message, true);
@@ -1238,7 +1267,7 @@
   // cover picture: required-ish for Instagram, optional for everything else
   function coverControls(v, i) {
     var kind = parseVideo(v.video).type, isIg = kind === "instagram";
-    if (v._fetching) return el("div", { class: "cover-row" }, [el("span", { class: "cover-hint", text: "Pulling the HD cover from " + COVER_SITES[kind] + " — this takes about a minute." })]);
+    if (v._fetching) return el("div", { class: "cover-row" }, [el("span", { class: "cover-hint", text: isIg ? "Pulling the cover from Instagram — this takes about 15 seconds." : "Pulling the HD cover from " + COVER_SITES[kind] + "…" })]);
     var input = el("input", { type: "file", accept: "image/jpeg,image/png,image/webp", hidden: "" });
     input.addEventListener("change", function () {
       var f = input.files && input.files[0];
@@ -1267,7 +1296,7 @@
       if (isIg && !cfg.token) { toast("Connect GitHub first — the app uses it to get the video.", true); openConnect(); return; }
       openFramePicker(v, i);
     } }, [el("span", { text: "Pick frame" })]));
-    if (autoCover(v) && !has && cfg.token) kids.splice(1, 0, el("button", { class: "btn btn-sm", type: "button", onclick: function () { fetchCover(v); } }, [
+    if (canFetchCover(v) && !has) kids.splice(1, 0, el("button", { class: "btn btn-sm", type: "button", onclick: function () { fetchCover(v); } }, [
       el("span", { text: "Fetch cover" })
     ]));
     if (has) kids.push(el("button", { class: "link-btn", type: "button", text: "Remove cover", onclick: function () {
@@ -1409,7 +1438,7 @@
       toast(cfg.token ? "Instagram added — pulling its cover now. Give it a title while you wait." : "Instagram added — give it a title, then Publish. The cover is pulled in automatically.");
       var t = $("#videoList .item .input.title");
       if (t) t.focus();
-    } else toast(COVER_SITES[info.type] && cfg.token ? "Added — pulling its HD cover now. Edit the title if you like, then Publish." : "Added — edit the title if you like, then Publish.");
+    } else toast(COVER_SITES[info.type] ? "Added — pulling its HD cover now. Edit the title if you like, then Publish." : "Added — edit the title if you like, then Publish.");
   });
 
   // show/hide on the site without deleting

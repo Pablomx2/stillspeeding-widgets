@@ -1,13 +1,13 @@
-// Gets the best cover picture for a YouTube, Vimeo or Instagram link and saves it in covers/.
-// yt-dlp picks the highest-resolution thumbnail the site offers; if it can't get one
-// (bot checks, login walls), each site has a plain fallback so a cover still turns up.
+// Gets the biggest cover picture for a YouTube, Vimeo or Instagram link and saves it to disk.
+// The sites' own full-size pictures are tried first (fast, and the same sizes yt-dlp picks:
+// YouTube maxresdefault 1280×720, Vimeo 1920px, Instagram full size). yt-dlp is the last resort —
+// from GitHub's servers YouTube and Vimeo ask it to sign in, and Instagram needs a login.
 import { readdir, writeFile, mkdir } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { instagramCode, findImageUrl, download } from "./instagram.mjs";
 
 const run = promisify(execFile);
-const DIR = "covers";
 
 // "yt-<id>", "vimeo-<id>" or "ig-<code>" — the file name (without extension) for a link's cover
 export function coverName(url) {
@@ -21,54 +21,62 @@ export function coverName(url) {
   return null;
 }
 
-async function findSaved(name) {
+async function findSaved(dir, name) {
   try {
-    const f = (await readdir(DIR)).find((n) => n.startsWith(name + ".") && /\.(jpe?g|png|webp)$/i.test(n));
-    return f ? `${DIR}/${f}` : null;
+    const f = (await readdir(dir)).find((n) => n.startsWith(name + ".") && /\.(jpe?g|png|webp)$/i.test(n));
+    return f ? `${dir}/${f}` : null;
   } catch { return null; }
 }
 
-async function viaYtDlp(url, name) {
+// the site's own picture, largest size first
+async function direct(info, url) {
+  if (info.type === "youtube") {
+    for (const size of ["maxresdefault", "sddefault", "hqdefault"]) {
+      try { return await download(`https://i.ytimg.com/vi/${info.id}/${size}.jpg`); } catch {}
+    }
+    return null;
+  }
+  let img = null;
+  if (info.type === "vimeo") {
+    const d = await (await fetch("https://vimeo.com/api/oembed.json?url=" + encodeURIComponent(url))).json();
+    if (d.thumbnail_url) {
+      try { return await download(d.thumbnail_url.replace(/_\d+(x\d+)?(?=\?|$)/, "_1920")); } catch {}
+      img = d.thumbnail_url;
+    }
+  } else {
+    img = await findImageUrl(info.id);
+  }
+  return img ? download(img) : null;
+}
+
+async function viaYtDlp(url, dir, name) {
   await run("yt-dlp", ["--skip-download", "--write-thumbnail", "--no-playlist", "--quiet", "--no-warnings",
     // keep jpg/png/webp as they are (no re-compression); anything else becomes jpg
     "--convert-thumbnails", "png>png/webp>webp/jpg",
-    "-o", `${DIR}/${name}.%(ext)s`, url], { timeout: 2 * 60 * 1000, maxBuffer: 16 * 1024 * 1024 });
-  return findSaved(name);
+    "-o", `${dir}/${name}.%(ext)s`, url], { timeout: 2 * 60 * 1000, maxBuffer: 16 * 1024 * 1024 });
+  return findSaved(dir, name);
 }
 
-async function fallbackUrl(info, url) {
-  if (info.type === "instagram") return findImageUrl(info.id);
-  if (info.type === "vimeo") {
-    const d = await (await fetch("https://vimeo.com/api/oembed.json?width=3840&url=" + encodeURIComponent(url))).json();
-    return d.thumbnail_url || null;
-  }
-  return null; // YouTube is handled in saveCover (tries sizes largest first)
-}
-
-// Returns the saved path, e.g. "covers/yt-abc123def45.webp". Reuses a cover that's already there.
-export async function saveCover(url) {
+// Returns the saved path, e.g. "covers/yt-abc123def45.jpg". Reuses a cover that's already there.
+export async function saveCover(url, dir = "covers") {
   const info = coverName(url);
   if (!info) throw new Error("Only YouTube, Vimeo and Instagram links get automatic covers.");
-  const saved = await findSaved(info.name);
+  const saved = await findSaved(dir, info.name);
   if (saved) return saved;
-  await mkdir(DIR, { recursive: true });
+  await mkdir(dir, { recursive: true });
 
-  let ytErr = null;
+  const buf = await direct(info, url).catch(() => null);
+  if (buf) {
+    const path = `${dir}/${info.name}.jpg`;
+    await writeFile(path, buf);
+    return path;
+  }
   try {
-    const p = await viaYtDlp(url, info.name);
+    const p = await viaYtDlp(url, dir, info.name);
     if (p) { console.log(`  ${info.name}: got the cover with yt-dlp`); return p; }
-  } catch (e) { ytErr = e; }
-  console.log(`  ${info.name}: yt-dlp couldn't get it${ytErr ? ` (${String(ytErr.stderr || ytErr.message).trim().split("\n").pop().slice(0, 200)})` : ""} — using the fallback`);
-
-  const path = `${DIR}/${info.name}.jpg`;
-  if (info.type === "youtube") {
-    for (const size of ["maxresdefault", "sddefault", "hqdefault"]) {
-      try { await writeFile(path, await download(`https://i.ytimg.com/vi/${info.id}/${size}.jpg`)); return path; } catch {}
-    }
-  } else {
-    const img = await fallbackUrl(info, url).catch(() => null);
-    if (img) { await writeFile(path, await download(img)); return path; }
+  } catch (e) {
+    console.log(`  ${info.name}: yt-dlp couldn't get it either (${String(e.stderr || e.message).trim().split("\n").pop().slice(0, 200)})`);
   }
   if (info.type === "instagram") throw new Error("Instagram didn't share a picture — is the post public?");
-  throw ytErr || new Error("Couldn't get a cover picture for that link.");
+  throw new Error("Couldn't get a cover picture for that link.");
 }

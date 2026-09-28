@@ -23,12 +23,11 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
     steps:
+      # the runner already has Node; yt-dlp is only needed for video copies (frame picker)
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
       - name: Install yt-dlp
-        run: python3 -m pip install --quiet --upgrade yt-dlp
+        run: |
+          if grep -qs '"kind": *"video"' requests/*.json; then python3 -m pip install --quiet --upgrade yt-dlp; fi
       - name: Load recent results
         run: |
           if git ls-remote --exit-code --heads origin media-cache >/dev/null; then
@@ -36,18 +35,7 @@ jobs:
           fi
       - name: Handle requests
         run: node scripts/media-helper.mjs
-      - name: Save covers and clear requests
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A requests 2>/dev/null || true
-          git add -A covers 2>/dev/null || true
-          if ! git diff --cached --quiet; then
-            git commit -qm "Media helper: handle requests"
-            git pull -q --rebase origin main
-            git push -q
-            gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || true
-          fi
+      # publish results first — that's what the app is waiting for
       - name: Publish results to the media-cache branch
         run: |
           cd out
@@ -56,3 +44,13 @@ jobs:
           git add -A
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "Media cache" --allow-empty
           git push -q -f "$REPO_URL" media-cache
+      - name: Clear handled requests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A requests 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -qm "Media helper: handle requests"
+            git pull -q --rebase origin main
+            git push -q
+          fi
