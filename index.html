@@ -285,6 +285,19 @@
   .cover-hint { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); background: rgba(0,0,0,.7); color: #fff; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 300px; pointer-events: none; transition: opacity .3s; white-space: nowrap; }
   .cover-hint.gone { opacity: 0; }
 
+  /* ---------- cut out a logo ---------- */
+  #cropDlg { width: min(760px, calc(100vw - 24px)); }
+  .crop-stage { display: grid; place-items: center; min-height: 220px; border-radius: 16px; background: #111; padding: 10px; }
+  .crop-wrap { position: relative; line-height: 0; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; overflow: hidden; border-radius: 6px; }
+  .crop-wrap img { display: block; max-width: 100%; max-height: 58vh; pointer-events: none; }
+  .crop-wrap.loading { width: 220px; height: 220px; cursor: progress; }
+  .crop-wrap.loading img { display: none; }
+  .crop-wrap.loading::after { content: ""; position: absolute; inset: 0; margin: auto; width: 22px; height: 22px; border: 2px solid #fafafa; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+  .crop-box { position: absolute; border: 2px solid #fff; border-radius: 3px; box-shadow: 0 0 0 9999px rgba(0,0,0,.55); pointer-events: none; }
+  .result.crop .pic img { max-height: 58px; border-radius: 4px; }
+  .result.crop.done .pic::after { content: "Cut out ✓"; }
+  .result-group { display: contents; }
+
   /* ---------- toast ---------- */
   .toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translate(-50%, 30px); opacity: 0; background: #000; color: #fff; padding: 12px 20px; border-radius: 300px; font-size: 14px; font-weight: 500; z-index: 50; pointer-events: none; transition: opacity .25s, transform .3s cubic-bezier(.2,.7,.2,1); max-width: calc(100vw - 32px); text-align: center; }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -385,7 +398,7 @@
     <div class="panel">
       <div class="panel-head"><h2>Add logos</h2></div>
       <form class="add-bar" id="logoSearchForm" autocomplete="off" role="search">
-        <input class="input" id="logoSearch" type="search" placeholder="Search a company — e.g. Netflix" aria-label="Company name">
+        <input class="input" id="logoSearch" type="search" placeholder="Search a brand or artist — e.g. Netflix" aria-label="Brand or artist name">
         <button class="btn btn-solid" type="submit"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><span>Find logos</span></button>
       </form>
       <div class="results" id="logoResults" hidden></div>
@@ -397,7 +410,7 @@
         <input type="file" id="fileInput" accept="image/png,image/svg+xml,image/jpeg,image/webp" multiple hidden>
       </label>
       <form class="add-bar" id="addLogoUrlForm" style="margin-top:12px" autocomplete="off">
-        <input class="input" id="addLogoUrl" type="url" inputmode="url" placeholder="…or paste an image link">
+        <input class="input" id="addLogoUrl" type="text" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="…or paste an image link, website or merch store">
         <button class="btn" type="submit"><span>Add link</span></button>
       </form>
     </div>
@@ -530,6 +543,19 @@
     <div class="dlg-actions">
       <button class="btn" type="button" id="frameCancel"><span>Cancel</span></button>
       <button class="btn btn-solid" type="button" id="frameUse" disabled><span>Use this frame</span></button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="cropDlg">
+  <div class="dlg">
+    <h2>Cut out the logo</h2>
+    <p class="hint" style="margin:0">Drag a box around the name or logo. The background is removed after.</p>
+    <div class="crop-stage"><div class="crop-wrap" id="cropWrap"><img id="cropImg" alt="" draggable="false"><div class="crop-box" id="cropBox" hidden></div></div></div>
+    <div class="dlg-actions">
+      <button class="btn" type="button" id="cropAll" style="margin-right:auto"><span>Use whole picture</span></button>
+      <button class="btn" type="button" id="cropCancel"><span>Cancel</span></button>
+      <button class="btn btn-solid" type="button" id="cropUse" disabled><span>Cut out</span></button>
     </div>
   </div>
 </dialog>
@@ -1495,6 +1521,7 @@
      Works on a canvas in the browser. It looks at the image's edges: if they're one plain
      colour, that colour is removed ("colour to alpha", so soft anti-aliased edges stay
      smooth), then empty space around the logo is trimmed so every logo sizes consistently. */
+  var PROXY = "https://wsrv.nl/?url=";
   function loadImage(src) {
     return new Promise(function (res, rej) {
       var img = new Image();
@@ -1502,6 +1529,10 @@
       img.onload = function () { res(img); };
       img.onerror = function () { rej(new Error("Couldn't load that image")); };
       img.src = src;
+    }).catch(function (e) {
+      // some sites don't let the app read their pictures — go through a public image proxy
+      if (!/^https?:/.test(src) || src.indexOf(PROXY) === 0) throw e;
+      return loadImage(PROXY + encodeURIComponent(src) + (/\.svg(\?|#|$)/i.test(src) ? "&output=png&w=1600" : ""));
     });
   }
   // give SVGs a real pixel size so they rasterise crisply
@@ -1726,15 +1757,18 @@
   }
 
   /* ---------------- logo search ----------------
-     Free, key-less sources that allow browser access:
-     Wikidata (a company's official logo), Simple Icons (clean one-colour brand marks)
-     and Wikimedia Commons (everything else tagged as a logo). */
+     Free sources that allow browser access:
+     Wikidata (a company's official logo + website), Simple Icons (clean one-colour brand marks),
+     Wikimedia Commons (everything else tagged as a logo), TheAudioDB (artist wordmarks, free
+     public key) and Apple Music album art (to cut a name out of). The official website and its
+     merch store are read by the media helper (scripts/page-images.mjs). */
   function qs(o) { o.format = "json"; o.origin = "*"; return Object.keys(o).map(function (k) { return k + "=" + encodeURIComponent(o[k]); }).join("&"); }
   function getJSON(url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
   var WD = "https://www.wikidata.org/w/api.php?", WC = "https://commons.wikimedia.org/w/api.php?";
   function simpleIconSlug(q) {
     return q.toLowerCase().replace(/\+/g, "plus").replace(/\./g, "dot").replace(/&/g, "and").normalize("NFKD").replace(/[^a-z0-9]/g, "");
   }
+  function norm(s) { return String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]/g, ""); }
   function searchLogos(q) {
     var words = q.toLowerCase().split(/\s+/).filter(function (w) { return w.length > 2; });
     var fromWikidata = getJSON(WD + qs({ action: "wbsearchentities", search: q, language: "en", limit: "6", type: "item" })).then(function (d) {
@@ -1747,6 +1781,10 @@
           if (!ent || !ent.claims) return;
           var label = ((ent.labels && ent.labels.en && ent.labels.en.value) || q)
             .replace(/,?\s+(inc|llc|ltd|limited|corp|corporation|co|company|plc|gmbh|s\.?a|ag|n\.?v)\.?$/i, "").trim();
+          if (!out.website && ent.claims.P856 && (ent.claims.P154 || id === ids[0])) {
+            var site = ent.claims.P856[0].mainsnak.datavalue;
+            if (site) out.website = site.value;
+          }
           ["P154", "P8972"].forEach(function (prop) {
             (ent.claims[prop] || []).forEach(function (cl) {
               var f = cl.mainsnak && cl.mainsnak.datavalue && cl.mainsnak.datavalue.value;
@@ -1769,27 +1807,61 @@
       .then(function (t) { return t && /<svg/.test(t) ? [{ name: q, source: "Simple Icons · one colour", svgText: t }] : []; })
       .catch(function () { return []; });
 
-    return Promise.all([fromWikidata, fromIcons, fromCommons]).then(function (lists) {
-      var files = [], seen = {};
-      lists[0].concat(lists[2]).forEach(function (c) { var k = c.file.replace(/_/g, " "); if (!seen[k]) { seen[k] = 1; files.push(c); } });
-      if (!files.length) return lists[1];
-      return getJSON(WC + qs({ action: "query", titles: files.slice(0, 40).map(function (c) { return c.file; }).join("|"), prop: "imageinfo", iiprop: "url|mime", iiurlwidth: "600" })).then(function (d) {
-        var norm = {};
-        ((d.query && d.query.normalized) || []).forEach(function (n) { norm[n.from] = n.to; });
-        var pages = (d.query && d.query.pages) || {}, byTitle = {};
-        Object.keys(pages).forEach(function (k) { byTitle[pages[k].title] = pages[k]; });
-        var out = [];
-        files.forEach(function (c) {
-          var p = byTitle[norm[c.file] || c.file], ii = p && p.imageinfo && p.imageinfo[0];
-          if (!ii) return;
-          var fromWd = c.source.indexOf("Wikidata") > -1;
-          if (!/svg|png|webp/.test(ii.mime) && !(fromWd && /jpeg/.test(ii.mime))) return; // photos aren't logos
-          out.push({ name: c.name, source: c.source, thumb: ii.thumburl || ii.url, full: ii.url, isSvg: /svg/.test(ii.mime) });
-        });
-        var wd = out.filter(function (c) { return c.source.indexOf("Wikidata") > -1; });
-        var rest = out.filter(function (c) { return c.source.indexOf("Wikidata") < 0; });
-        return wd.concat(lists[1], rest).slice(0, 12);
+    var fromAudioDB = getJSON("https://www.theaudiodb.com/api/v1/json/123/search.php?s=" + encodeURIComponent(q)).then(function (d) {
+      return (d.artists || []).filter(function (a) { return norm(a.strArtist) === norm(q); })[0] || null;
+    }).catch(function () { return null; });
+    var fromAlbums = getJSON("https://itunes.apple.com/search?entity=album&attribute=artistTerm&limit=40&term=" + encodeURIComponent(q)).then(function (d) {
+      var seenAlbum = {};
+      return (d.results || []).filter(function (r) {
+        var k = norm(r.collectionName.replace(/\s*[([].*$/, ""));
+        if (norm(r.artistName) !== norm(q) || !r.artworkUrl100 || seenAlbum[k]) return false;
+        return (seenAlbum[k] = true);
+      }).sort(function (a, b) {
+        return /- (Single|EP)$/.test(a.collectionName) - /- (Single|EP)$/.test(b.collectionName); // albums before singles
+      }).slice(0, 10).map(function (r) {
+        return { name: r.artistName, source: "Album · " + r.collectionName.replace(/ - (Single|EP)$/, ""), crop: true,
+                 thumb: r.artworkUrl100.replace(/\/\d+x\d+bb\./, "/300x300bb."), full: r.artworkUrl100.replace(/\/\d+x\d+bb\./, "/1500x1500bb.") };
       });
+    }).catch(function () { return []; });
+
+    return Promise.all([fromWikidata, fromIcons, fromCommons, fromAudioDB, fromAlbums]).then(function (lists) {
+      var artist = lists[3], fromArtist = [];
+      if (artist) {
+        var an = artist.strArtist;
+        if (artist.strArtistLogo) fromArtist.push({ name: an, source: "Artist logo · TheAudioDB", thumb: artist.strArtistLogo, full: artist.strArtistLogo });
+        if (artist.strArtistClearart) fromArtist.push({ name: an, source: "Logo art · TheAudioDB", thumb: artist.strArtistClearart, full: artist.strArtistClearart, crop: true });
+        if (artist.strArtistBanner) fromArtist.push({ name: an, source: "Banner · TheAudioDB", thumb: artist.strArtistBanner, full: artist.strArtistBanner, crop: true });
+      }
+      var site = (artist && artist.strWebsite) || lists[0].website || "";
+      if (site && !/^https?:/i.test(site)) site = "https://" + site;
+      return findLogoFiles(lists).then(function (list) {
+        var wd = list.filter(function (c) { return c.source.indexOf("Wikidata") > -1; });
+        var rest = list.filter(function (c) { return c.source.indexOf("Wikidata") < 0; });
+        return { logos: wd.concat(fromArtist, rest).slice(0, 15), albums: lists[4], website: site };
+      });
+    });
+  }
+  // turn Wikidata / Commons file names into pictures (plus the Simple Icons match)
+  function findLogoFiles(lists) {
+    var files = [], seen = {};
+    lists[0].concat(lists[2]).forEach(function (c) { var k = c.file.replace(/_/g, " "); if (!seen[k]) { seen[k] = 1; files.push(c); } });
+    if (!files.length) return Promise.resolve(lists[1]);
+    return getJSON(WC + qs({ action: "query", titles: files.slice(0, 40).map(function (c) { return c.file; }).join("|"), prop: "imageinfo", iiprop: "url|mime", iiurlwidth: "600" })).then(function (d) {
+      var renamed = {};
+      ((d.query && d.query.normalized) || []).forEach(function (n) { renamed[n.from] = n.to; });
+      var pages = (d.query && d.query.pages) || {}, byTitle = {};
+      Object.keys(pages).forEach(function (k) { byTitle[pages[k].title] = pages[k]; });
+      var out = [];
+      files.forEach(function (c) {
+        var p = byTitle[renamed[c.file] || c.file], ii = p && p.imageinfo && p.imageinfo[0];
+        if (!ii) return;
+        var fromWd = c.source.indexOf("Wikidata") > -1;
+        if (!/svg|png|webp/.test(ii.mime) && !(fromWd && /jpeg/.test(ii.mime))) return; // photos aren't logos
+        out.push({ name: c.name, source: c.source, thumb: ii.thumburl || ii.url, full: ii.url, isSvg: /svg/.test(ii.mime) });
+      });
+      var wd = out.filter(function (c) { return c.source.indexOf("Wikidata") > -1; });
+      var rest = out.filter(function (c) { return c.source.indexOf("Wikidata") < 0; });
+      return wd.concat(lists[1], rest);
     });
   }
 
@@ -1802,45 +1874,174 @@
     box.hidden = false;
     box.innerHTML = "";
     for (var k = 0; k < 6; k++) box.appendChild(el("div", { class: "result skeleton" }, [el("div", { class: "pic" }), el("div", { class: "src", html: "&nbsp;" })]));
-    searchLogos(q).then(function (results) {
+    searchLogos(q).then(function (res) {
       if (seq !== searchSeq) return;
       box.innerHTML = "";
-      if (!results.length) {
-        box.appendChild(el("div", { class: "msg", text: "No logos found for “" + q + "”. Try the full company name, or upload a file below." }));
-        return;
+      resultGroup(box, "Logos — tap one; the background is removed for you.", res.logos);
+      resultGroup(box, "Album art — tap one, then drag a box around the name.", res.albums);
+      if (res.website) {
+        if (cfg.token) findOnPage(box, res.website, q, seq);
+        else box.appendChild(el("div", { class: "msg", text: "Connect GitHub to also look for logos and merch on " + hostOf(res.website) + "." }));
       }
-      box.appendChild(el("div", { class: "msg", text: "Tap the one you want — the background is removed for you." }));
-      results.forEach(function (r) {
-        var shown = r.svgText ? "data:image/svg+xml;base64," + b64encodeText(r.svgText) : r.thumb;
-        var tile = el("button", { class: "result", type: "button", title: r.name + " — " + r.source }, [
-          el("div", { class: "pic checker" }, [el("img", { src: shown, alt: r.name, loading: "lazy" })]),
-          el("div", { class: "src", text: r.source })
-        ]);
-        tile.querySelector("img").onerror = function () { tile.remove(); };
-        tile.addEventListener("click", function () {
-          if (tile.classList.contains("busy")) return;
-          tile.classList.add("busy");
-          var source = r.svgText ? Promise.resolve({ isSvg: true, svgText: r.svgText })
-            : r.isSvg ? fetch(r.full).then(function (x) { return x.text(); }).then(function (t) { return { isSvg: true, svgText: t }; }, function () { return { isSvg: true, src: r.thumb }; })
-            : Promise.resolve({ isSvg: false, src: r.thumb });
-          source.then(function (s) { return importLogo(r.name, s); }).then(function (item) {
-            tile.classList.remove("busy");
-            tile.classList.add("done");
-            addLogoItems([item]);
-            toast(r.name + " added — press Publish when you're ready.");
-          }).catch(function () {
-            tile.classList.remove("busy");
-            toast("Couldn't use that one — try another.", true);
-          });
-        });
-        box.appendChild(tile);
-      });
+      if (!res.logos.length && !res.albums.length && !res.website) {
+        box.appendChild(el("div", { class: "msg", text: "Nothing found for “" + q + "”. Paste their website or merch store link below, or upload a file." }));
+      }
     }).catch(function () {
       if (seq !== searchSeq) return;
       box.innerHTML = "";
       box.appendChild(el("div", { class: "msg", text: "Search isn't reachable right now — you can still upload a file below." }));
     });
   });
+
+  function hostOf(url) { try { return new URL(url).host.replace(/^www\./, ""); } catch (e) { return url; } }
+  function skeletonTiles(box, n) {
+    for (var k = 0; k < n; k++) box.appendChild(el("div", { class: "result skeleton" }, [el("div", { class: "pic" }), el("div", { class: "src", html: "&nbsp;" })]));
+  }
+  function resultGroup(box, title, list) {
+    if (!list || !list.length) return;
+    box.appendChild(el("div", { class: "msg", text: title }));
+    list.forEach(function (r) { box.appendChild(resultTile(r)); });
+  }
+  function resultTile(r) {
+    var shown = r.svgText ? "data:image/svg+xml;base64," + b64encodeText(r.svgText) : r.thumb;
+    var tile = el("button", { class: "result" + (r.crop ? " crop" : ""), type: "button", title: r.name + " — " + r.source }, [
+      el("div", { class: "pic checker" }, [el("img", { src: shown, alt: r.name, loading: "lazy", referrerpolicy: "no-referrer" })]),
+      el("div", { class: "src", text: r.source })
+    ]);
+    tile.querySelector("img").onerror = function () { tile.remove(); };
+    tile.addEventListener("click", function () {
+      if (tile.classList.contains("busy")) return;
+      if (r.crop) { openCrop(r.name, r.full || r.thumb, function () { tile.classList.add("done"); }); return; }
+      tile.classList.add("busy");
+      var source = r.svgText ? Promise.resolve({ isSvg: true, svgText: r.svgText })
+        : r.isSvg ? fetch(r.full).then(function (x) { if (!x.ok) throw 0; return x.text(); }).then(function (t) { return { isSvg: true, svgText: t }; }, function () { return { isSvg: true, src: r.thumb || r.full }; })
+        : Promise.resolve({ isSvg: false, src: r.thumb || r.full });
+      source.then(function (s) { return importLogo(r.name, s); }).then(function (item) {
+        tile.classList.remove("busy");
+        tile.classList.add("done");
+        addLogoItems([item]);
+        toast(r.name + " added — press Publish when you're ready.");
+      }).catch(function () {
+        tile.classList.remove("busy");
+        toast("Couldn't use that one — try another.", true);
+      });
+    });
+    return tile;
+  }
+  // logos, merch and pictures on a web page (read by the media helper Action — takes ~10 seconds)
+  function findOnPage(box, url, name, seq) {
+    var host = hostOf(url);
+    var group = el("div", { class: "result-group" });
+    group.appendChild(el("div", { class: "msg", text: "Looking on " + host + " and its store for logos and merch…" }));
+    skeletonTiles(group, 4);
+    box.appendChild(group);
+    requestMedia("page-images", url).then(function (st) {
+      if (seq !== searchSeq) return;
+      group.innerHTML = "";
+      var LABEL = { logo: "Logo", merch: "Merch", icon: "Icon", image: "Picture" };
+      var list = (st.images || []).map(function (x) {
+        var xh = x.url ? hostOf(x.url) : host;
+        return { name: name, source: LABEL[x.kind] + " · " + xh, svgText: x.svgText, full: x.url, crop: x.kind === "merch" || x.kind === "image",
+                 thumb: x.url && x.url.replace(/([?&])width=\d+/, "$1width=400"), isSvg: !!x.url && /\.svg(\?|#|$)/i.test(x.url) };
+      });
+      if (!list.length) { group.appendChild(el("div", { class: "msg", text: "Nothing usable found on " + host + "." })); return; }
+      resultGroup(group, "From " + host + " — logos add directly; tap merch or pictures to cut the logo out.", list);
+    }).catch(function (e) {
+      if (seq !== searchSeq) return;
+      group.innerHTML = "";
+      group.appendChild(el("div", { class: "msg", text: "Couldn't read " + host + ": " + e.message }));
+    });
+  }
+
+  /* ---------------- cut out a logo (album art, merch, website pictures) ---------------- */
+  var cropState = null;
+  function openCrop(name, url, onDone) {
+    var dlg = $("#cropDlg"), img = $("#cropImg"), wrap = $("#cropWrap");
+    cropState = { name: name, sel: null, img: null, onDone: onDone };
+    $("#cropBox").hidden = true;
+    $("#cropUse").disabled = true;
+    $("#cropAll").disabled = true;
+    wrap.classList.add("loading");
+    img.removeAttribute("src");
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+    var st = cropState;
+    loadImage(url).then(function (im) {
+      if (cropState !== st) return;
+      st.img = im;
+      img.src = im.src;
+      wrap.classList.remove("loading");
+      $("#cropAll").disabled = false;
+    }, function () {
+      if (cropState !== st) return;
+      toast("Couldn't open that picture — try another.", true);
+      closeCrop();
+    });
+  }
+  function closeCrop() {
+    var dlg = $("#cropDlg");
+    if (dlg.close) dlg.close(); else dlg.removeAttribute("open");
+    cropState = null;
+  }
+  function drawCropBox() {
+    var sel = cropState && cropState.sel, b = $("#cropBox");
+    b.hidden = !sel;
+    if (!sel) return;
+    b.style.left = sel.x * 100 + "%"; b.style.top = sel.y * 100 + "%";
+    b.style.width = sel.w * 100 + "%"; b.style.height = sel.h * 100 + "%";
+  }
+  function useCrop(sel) {
+    var st = cropState;
+    if (!st || !st.img) return;
+    var im = st.img, W = im.naturalWidth, H = im.naturalHeight;
+    var c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(sel.w * W));
+    c.height = Math.max(1, Math.round(sel.h * H));
+    c.getContext("2d").drawImage(im, sel.x * W, sel.y * H, sel.w * W, sel.h * H, 0, 0, c.width, c.height);
+    $("#cropUse").disabled = $("#cropAll").disabled = true;
+    importLogo(st.name, { isSvg: false, src: c.toDataURL("image/png") }).then(function (item) {
+      addLogoItems([item]);
+      if (st.onDone) st.onDone();
+      closeCrop();
+      toast(st.name + " added — check the background switch, then Publish.");
+    }).catch(function () {
+      $("#cropUse").disabled = !st.sel; $("#cropAll").disabled = false;
+      toast("Couldn't use that area — try again.", true);
+    });
+  }
+  (function () {
+    var wrap = $("#cropWrap"), start = null;
+    function pt(e) {
+      var r = wrap.getBoundingClientRect();
+      return { x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) };
+    }
+    wrap.addEventListener("pointerdown", function (e) {
+      if (!cropState || !cropState.img) return;
+      e.preventDefault();
+      wrap.setPointerCapture(e.pointerId);
+      start = pt(e);
+      cropState.sel = null;
+      drawCropBox();
+    });
+    wrap.addEventListener("pointermove", function (e) {
+      if (!start || !cropState) return;
+      var p = pt(e);
+      cropState.sel = { x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), w: Math.abs(p.x - start.x), h: Math.abs(p.y - start.y) };
+      drawCropBox();
+    });
+    function end() {
+      if (!start || !cropState) return;
+      start = null;
+      var sel = cropState.sel;
+      if (sel && (sel.w < 0.02 || sel.h < 0.02)) { cropState.sel = null; drawCropBox(); }
+      $("#cropUse").disabled = !cropState.sel;
+    }
+    wrap.addEventListener("pointerup", end);
+    wrap.addEventListener("pointercancel", end);
+    $("#cropUse").addEventListener("click", function () { if (cropState && cropState.sel) useCrop(cropState.sel); });
+    $("#cropAll").addEventListener("click", function () { useCrop({ x: 0, y: 0, w: 1, h: 1 }); });
+    $("#cropCancel").addEventListener("click", closeCrop);
+    $("#cropDlg").addEventListener("close", function () { cropState = null; });
+  })();
 
   var drop = $("#dropZone");
   $("#fileInput").addEventListener("change", function (e) { addFiles(e.target.files); e.target.value = ""; });
@@ -1855,6 +2056,18 @@
     e.preventDefault();
     var input = $("#addLogoUrl"), url = input.value.trim();
     if (!url) return;
+    if (!/^(https?:|data:)/i.test(url)) url = "https://" + url;
+    if (!/^data:image\//i.test(url) && !/\.(png|jpe?g|webp|gif|svg|avif)(\?|#|$)/i.test(url)) {
+      // a web page (site, merch store, Bandcamp…) — list its logos and merch
+      if (!cfg.token) { toast("Connect GitHub first — the app uses it to read web pages.", true); openConnect(); return; }
+      input.value = "";
+      var box = $("#logoResults"), seq = ++searchSeq;
+      box.hidden = false;
+      box.innerHTML = "";
+      var who = $("#logoSearch").value.trim() || prettyName(hostOf(url).replace(/^(store|shop|merch)\./, "").split(".")[0]);
+      findOnPage(box, url, who, seq);
+      return;
+    }
     var name = prettyName(decodeURIComponent(url.split(/[?#]/)[0].split("/").pop() || "Client"));
     input.value = "";
     var isSvg = /\.svg(\?|#|$)/i.test(url);
