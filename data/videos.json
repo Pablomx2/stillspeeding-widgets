@@ -10,17 +10,30 @@
   },
   "videos": [
     {
-      "video": "https://www.instagram.com/p/DdWq3eqDps5/",
-      "title": "Audible - En Otras Palabras",
-      "meta": "Latino Heritage Month Campaign",
-      "thumbnail": "covers/ig-DdWq3eqDps5.jpg",
-      "coverPos": "50.0% 31.1%"
+      "video": "https://www.youtube.com/watch?v=qTm4W_VRs3Q",
+      "title": "Kendrick and SZA GNX Tour Skit",
+      "meta": "Tour Assets"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=-gm2ncZDJPU",
+      "title": "WWE 2K25: Netflix Edition",
+      "meta": "Commercial"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=I-rOF9se14w",
+      "title": "LISA — When I'm With You",
+      "meta": "Behind the scenes"
     },
     {
       "video": "https://www.instagram.com/p/DdCELxiBsVE/",
       "title": "Google x First Time with Mika Abdalla",
       "meta": "Commercial",
       "thumbnail": "covers/ig-DdCELxiBsVE.jpg"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
+      "title": "ADELA — Nicole Kidman",
+      "meta": "Music video"
     },
     {
       "video": "https://www.instagram.com/p/DcjEbZhuqd7/",
@@ -30,46 +43,21 @@
       "coverPos": "50.0% 26.5%"
     },
     {
-      "video": "https://www.instagram.com/p/Ddjph23J89j/",
-      "title": "Audible - En Otras Palabras",
-      "meta": "Latino Heritage Month Campaign",
-      "thumbnail": "covers/ig-Ddjph23J89j.jpg",
-      "coverPos": "50.0% 33.1%"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
-      "title": "ADELA — Nicole Kidman",
-      "meta": "Music video"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=-gm2ncZDJPU",
-      "title": "WWE 2K25: Netflix Edition",
-      "meta": "Commercial"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=p4bqpSJwguw",
-      "title": "My Current Rotation - Revolve",
-      "meta": "Youtube Content"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=qTm4W_VRs3Q",
-      "title": "Kendrick and SZA GNX Tour Skit",
-      "meta": "Tour Assets"
-    },
-    {
       "video": "https://www.youtube.com/watch?v=NLDida6fglw",
       "title": "Project Hail Mary",
       "meta": "Youtube Content"
     },
     {
-      "video": "https://www.youtube.com/watch?v=I-rOF9se14w",
-      "title": "LISA — When I'm With You",
-      "meta": "Behind the scenes"
-    },
-    {
       "video": "https://www.youtube.com/watch?v=jkWDNE8Tjtc",
       "title": "Meghan Trainor - Still Don't Care",
       "meta": "Music Video"
+    },
+    {
+      "video": "https://www.instagram.com/p/DdWq3eqDps5/",
+      "title": "Audible - En Otras Palabras",
+      "meta": "Latino Heritage Month Campaign",
+      "thumbnail": "covers/ig-DdWq3eqDps5.jpg",
+      "coverPos": "50.0% 31.1%"
     },
     {
       "video": "https://www.youtube.com/watch?v=gE-rcACBTZU",
@@ -80,6 +68,18 @@
       "video": "https://www.youtube.com/watch?v=siL-RoC8haQ",
       "title": "LISA — FUTW (Vixi Solo Version)",
       "meta": "Behind the scenes"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=p4bqpSJwguw",
+      "title": "My Current Rotation - Revolve",
+      "meta": "Youtube Content"
+    },
+    {
+      "video": "https://www.instagram.com/p/Ddjph23J89j/",
+      "title": "Audible - En Otras Palabras",
+      "meta": "Latino Heritage Month Campaign",
+      "thumbnail": "covers/ig-Ddjph23J89j.jpg",
+      "coverPos": "50.0% 33.1%"
     }
   ]
 }

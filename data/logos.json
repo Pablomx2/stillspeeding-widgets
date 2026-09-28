@@ -20,14 +20,6 @@
   },
   "logos": [
     {
-      "name": "Wendy's",
-      "src": "logos/wendys-ti5bx.png",
-      "ink": 0.69,
-      "cy": 0.521,
-      "el": 0.34,
-      "er": 0.36
-    },
-    {
       "name": "Netflix",
       "src": "logos/netflix-f1pwz.svg",
       "ink": 0.44,
@@ -36,12 +28,12 @@
       "er": 1.3
     },
     {
-      "name": "Audible",
-      "src": "logos/audible-f2nbv.svg",
-      "ink": 0.22,
-      "cy": 0.513,
-      "el": 1.03,
-      "er": 0.63
+      "name": "Google",
+      "src": "logos/google-f3j7b.svg",
+      "ink": 0.3,
+      "cy": 0.487,
+      "el": 1,
+      "er": 0.97
     },
     {
       "name": "Meta Platforms",
@@ -52,20 +44,36 @@
       "er": 1.09
     },
     {
-      "name": "American Express",
-      "src": "logos/american-express-f7emf.png",
-      "ink": 1,
-      "cy": 0.5,
-      "el": 1,
-      "er": 0.98
+      "name": "Starbucks",
+      "src": "logos/starbucks-sdnan.svg",
+      "ink": 0.43,
+      "cy": 0.459,
+      "el": 0.56,
+      "er": 0.56
     },
     {
-      "name": "Ram",
-      "src": "logos/ram-f24zp.svg",
-      "ink": 0.25,
-      "cy": 0.572,
-      "el": 0.43,
-      "er": 0.42
+      "name": "Wendy's",
+      "src": "logos/wendys-ti5bx.png",
+      "ink": 0.69,
+      "cy": 0.521,
+      "el": 0.34,
+      "er": 0.36
+    },
+    {
+      "name": "Adidas",
+      "src": "logos/adidas-f827t.svg",
+      "ink": 0.44,
+      "cy": 0.647,
+      "el": 0.35,
+      "er": 0.4
+    },
+    {
+      "name": "National Basketball Association",
+      "src": "logos/national-basketball-association-ftmay.png",
+      "ink": 0.45,
+      "cy": 0.523,
+      "el": 0.97,
+      "er": 0.92
     },
     {
       "name": "Toyota",
@@ -74,6 +82,30 @@
       "cy": 0.479,
       "el": 0.92,
       "er": 0.97
+    },
+    {
+      "name": "American Express",
+      "src": "logos/american-express-f7emf.png",
+      "ink": 1,
+      "cy": 0.5,
+      "el": 1,
+      "er": 0.98
+    },
+    {
+      "name": "Karol g",
+      "src": "logos/karol-g-tf8a6.png",
+      "ink": 0.27,
+      "cy": 0.522,
+      "el": 0.83,
+      "er": 0.89
+    },
+    {
+      "name": "Audible",
+      "src": "logos/audible-f2nbv.svg",
+      "ink": 0.22,
+      "cy": 0.513,
+      "el": 1.03,
+      "er": 0.63
     },
     {
       "name": "Billboard",
@@ -92,30 +124,6 @@
       "er": 1.1
     },
     {
-      "name": "Google",
-      "src": "logos/google-f3j7b.svg",
-      "ink": 0.3,
-      "cy": 0.487,
-      "el": 1,
-      "er": 0.97
-    },
-    {
-      "name": "WWE",
-      "src": "logos/wwe-f515j.svg",
-      "ink": 0.3,
-      "cy": 0.548,
-      "el": 0.2,
-      "er": 0.36
-    },
-    {
-      "name": "Kalshi",
-      "src": "logos/kalshi-f6yw7.svg",
-      "ink": 0.5,
-      "cy": 0.56,
-      "el": 1.24,
-      "er": 1.14
-    },
-    {
       "name": "Waymo",
       "src": "logos/waymo-f7o7i.svg",
       "ink": 0.39,
@@ -124,28 +132,12 @@
       "er": 0.53
     },
     {
-      "name": "Adidas",
-      "src": "logos/adidas-f827t.svg",
-      "ink": 0.44,
-      "cy": 0.647,
-      "el": 0.35,
-      "er": 0.4
-    },
-    {
-      "name": "Brooks",
-      "src": "logos/brooks-f89ql.svg",
-      "ink": 0.33,
-      "cy": 0.492,
-      "el": 1.04,
-      "er": 1
-    },
-    {
-      "name": "National Basketball Association",
-      "src": "logos/national-basketball-association-ftmay.png",
-      "ink": 0.45,
-      "cy": 0.523,
-      "el": 0.97,
-      "er": 0.92
+      "name": "WWE",
+      "src": "logos/wwe-f515j.svg",
+      "ink": 0.3,
+      "cy": 0.548,
+      "el": 0.2,
+      "er": 0.36
     },
     {
       "name": "Hot Wheels",
@@ -164,14 +156,6 @@
       "er": 0.96
     },
     {
-      "name": "Starbucks",
-      "src": "logos/starbucks-sdnan.svg",
-      "ink": 0.43,
-      "cy": 0.459,
-      "el": 0.56,
-      "er": 0.56
-    },
-    {
       "name": "Fuerza Regida",
       "src": "logos/fuerza-regida-teok3.png",
       "ink": 0.47,
@@ -180,12 +164,28 @@
       "er": 0.42
     },
     {
-      "name": "Karol g",
-      "src": "logos/karol-g-tf8a6.png",
-      "ink": 0.27,
-      "cy": 0.522,
-      "el": 0.83,
-      "er": 0.89
+      "name": "Ram",
+      "src": "logos/ram-f24zp.svg",
+      "ink": 0.25,
+      "cy": 0.572,
+      "el": 0.43,
+      "er": 0.42
+    },
+    {
+      "name": "Kalshi",
+      "src": "logos/kalshi-f6yw7.svg",
+      "ink": 0.5,
+      "cy": 0.56,
+      "el": 1.24,
+      "er": 1.14
+    },
+    {
+      "name": "Brooks",
+      "src": "logos/brooks-f89ql.svg",
+      "ink": 0.33,
+      "cy": 0.492,
+      "el": 1.04,
+      "er": 1
     }
   ]
 }
