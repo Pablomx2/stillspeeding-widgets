@@ -20,6 +20,14 @@
   },
   "logos": [
     {
+      "name": "Wendy's",
+      "src": "logos/wendys-ti5bx.png",
+      "ink": 0.69,
+      "cy": 0.521,
+      "el": 0.34,
+      "er": 0.36
+    },
+    {
       "name": "Netflix",
       "src": "logos/netflix-f1pwz.svg",
       "ink": 0.44,
