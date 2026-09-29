@@ -11,8 +11,8 @@
   var W = (window.SSWidgets = window.SSWidgets || {});
 
   var CSS = [
-    ".ssl-root{--ssl-ink:#000;--ssl-height:40px;--ssl-max-width:140px;--ssl-gap:80px;--ssl-gray:100%;--ssl-opacity:.55;--ssl-fade:14%;width:100%;color:var(--ssl-ink);-webkit-tap-highlight-color:transparent}",
-    ".ssl-root.ssl-dark{--ssl-ink:#fafafa}",
+    ".ssl-root{position:relative;--ssl-ink:#000;--ssl-paper:#fafafa;--ssl-height:40px;--ssl-max-width:140px;--ssl-gap:80px;--ssl-gray:100%;--ssl-opacity:.55;--ssl-fade:14%;width:100%;color:var(--ssl-ink);-webkit-tap-highlight-color:transparent}",
+    ".ssl-root.ssl-dark{--ssl-ink:#fafafa;--ssl-paper:#0a0a0a}",
     ".ssl-root *,.ssl-root *::before,.ssl-root *::after{box-sizing:border-box}",
     ".ssl-heading{display:flex;align-items:center;gap:18px;margin:0 0 30px;font-family:'Dangrek','Arial Narrow',sans-serif;font-size:15px;line-height:1;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}",
     ".ssl-heading::before,.ssl-heading::after{content:'';flex:1;height:1px;background:currentColor;opacity:.18}",
@@ -31,6 +31,9 @@
     /* touch screens: a tap brings the colour up, holds it, then lets it drift back slowly */
     ".ssl-root.ssl-hover .ssl-item.is-lit img{filter:none;opacity:1;transition-duration:.6s}",
     ".ssl-root .ssl-item.is-dimming img{transition-duration:1.6s;transition-timing-function:cubic-bezier(.4,0,.2,1)}",
+    /* name label: a small pill that surfaces under a logo after a long hover, or a second tap */
+    ".ssl-tip{position:absolute;left:0;top:0;z-index:3;pointer-events:none;white-space:nowrap;padding:7px 13px 6px;border-radius:999px;background:var(--ssl-ink);color:var(--ssl-paper);font:500 12px/1 'Space Grotesk',system-ui,sans-serif;letter-spacing:.05em;box-shadow:0 6px 20px rgba(0,0,0,.14);opacity:0;transform:translate(-50%,-5px) scale(.96);filter:blur(2px);transition:opacity .5s cubic-bezier(.4,0,.2,1),transform .6s cubic-bezier(.4,0,.2,1),filter .5s ease}",
+    ".ssl-tip.is-on{opacity:1;transform:translate(-50%,0) scale(1);filter:blur(0);transition-duration:.45s,.6s,.45s;transition-timing-function:ease,cubic-bezier(.2,.7,.2,1),ease}",
     ".ssl-root .ssl-item:focus-visible{outline:2px solid var(--ssl-ink);outline-offset:8px;border-radius:6px}",
     ".ssl-root .ssl-item:focus-visible img{filter:none;opacity:1}",
     ".ssl-root.ssl-static .ssl-track{width:100%}",
@@ -155,6 +158,7 @@
         item.rel = "noopener";
         item.setAttribute("aria-label", logo.name || "Client");
       }
+      if (logo.name) item.setAttribute("data-name", logo.name);
       var img = document.createElement("img");
       var src = logo.preview || resolve(logo.src, opts.base);
       // logos saved by the app are already cropped to their artwork (logo.t), so they load as is;
@@ -283,9 +287,77 @@
       return loaded(img).then(function () { return tidy(img); });
     })).then(function () { balance(); opticalCentre(); });
 
+    /* Name label: rest the mouse on a logo for a moment (or tap a lit logo again on a phone)
+       and its name surfaces in a small pill underneath. It follows the logo while the banner
+       settles, and fades away when the mouse moves off or, on touch, after a short while. */
+    var tipEl = document.createElement("div"), tipFor = null, tipRaf = 0, tipHideT = 0, tipSwapT = 0;
+    tipEl.className = "ssl-tip";
+    tipEl.setAttribute("aria-hidden", "true"); // the logo's alt text already names it
+    wrap.appendChild(tipEl);
+    function placeTip() {
+      if (!tipFor) return;
+      var img = tipFor.querySelector("img") || tipFor;
+      var r = img.getBoundingClientRect(), w = wrap.getBoundingClientRect(), half = tipEl.offsetWidth / 2;
+      tipEl.style.left = Math.max(half, Math.min(w.width - half, r.left + r.width / 2 - w.left)) + "px";
+      tipEl.style.top = (r.bottom - w.top + 12) + "px";
+      tipRaf = requestAnimationFrame(placeTip);
+    }
+    function showTip(item) {
+      var name = item.getAttribute("data-name");
+      if (!name) return;
+      clearTimeout(tipHideT); clearTimeout(tipSwapT); cancelAnimationFrame(tipRaf);
+      if (tipFor && tipFor !== item && tipEl.classList.contains("is-on")) { // moving to a neighbour: fade out, then back in
+        tipEl.classList.remove("is-on");
+        tipFor = item;
+        tipSwapT = setTimeout(function () { if (tipFor === item) showTip(item); }, 220);
+        return;
+      }
+      tipFor = item;
+      tipEl.textContent = name;
+      placeTip();
+      tipEl.classList.add("is-on");
+    }
+    function hideTip() {
+      clearTimeout(tipHideT); clearTimeout(tipSwapT);
+      if (!tipFor) return;
+      tipFor = null;
+      cancelAnimationFrame(tipRaf);
+      tipEl.classList.remove("is-on");
+    }
+    cleanups.push(function () { hideTip(); });
+
+    /* mouse: which logo is under the pointer is checked a few times a second (the banner moves
+       logos under a still mouse), and the label shows once one has stayed there long enough */
+    var DWELL = 1300, hov = { x: 0, y: 0, cand: null, since: 0, poll: 0 };
+    function checkHover() {
+      var now = Date.now();
+      if (wrap.classList.contains("ssl-dragging")) { hov.cand = null; hideTip(); return; }
+      var el = document.elementFromPoint(hov.x, hov.y);
+      var item = el && el.closest ? el.closest(".ssl-item") : null;
+      if (item && !viewport.contains(item)) item = null;
+      if (item !== hov.cand) { hov.cand = item; hov.since = now; }
+      if (tipFor) {
+        if (!item) { if (now - hov.since > 250) hideTip(); }
+        else if (item !== tipFor) showTip(item);
+      } else if (item && now - hov.since >= DWELL) showTip(item);
+    }
+    function stopHover() { clearInterval(hov.poll); hov.poll = 0; hov.cand = null; }
+    viewport.addEventListener("pointermove", function (e) {
+      if (e.pointerType !== "mouse") return;
+      hov.x = e.clientX; hov.y = e.clientY;
+      if (!hov.poll) { hov.poll = setInterval(checkHover, 120); checkHover(); }
+    });
+    viewport.addEventListener("pointerleave", function (e) {
+      if (e.pointerType !== "mouse") return;
+      stopHover(); hideTip();
+    });
+    viewport.addEventListener("wheel", function () { hov.cand = null; hideTip(); }, { passive: true });
+    cleanups.push(stopHover);
+
     /* Tap to colour: phones can't hover, so a tap on a logo does what hovering does on a computer —
        its colour comes up, the banner eases to a stop, and after a moment both drift back.
-       On a logo with a link, the first tap colours it and a second tap opens it. */
+       Tapping the lit logo again shows its name for a moment. On a logo with a link, the
+       link opens on the tap after that (while its name is showing). */
     var tapHooks = null, lit = null, litTimer = 0, tapPaused = false, blockClick = false;
     if (S.colorOnHover) {
       var tap = null;
@@ -297,7 +369,7 @@
       var release = function () {
         clearTimeout(litTimer);
         unwatchPage();
-        if (lit) dim(lit);
+        if (lit) { dim(lit); if (tipFor === lit) hideTip(); }
         lit = null;
         if (tapPaused) { tapPaused = false; hovered = false; if (tapHooks) tapHooks.out(); }
       };
@@ -332,8 +404,18 @@
         if (!t || e.timeStamp - t.t > 700) return;
         var item = e.target.closest && e.target.closest(".ssl-item");
         if (!item || !viewport.contains(item)) { if (lit) release(); return; } // tapped the space between logos
-        blockClick = !!item.href && !item.classList.contains("is-lit");
-        if (lit && lit !== item) dim(lit);
+        var again = item === lit && item.classList.contains("is-lit");
+        var named = tipFor === item && tipEl.classList.contains("is-on");
+        blockClick = !!item.href && (!again || (!named && item.hasAttribute("data-name")));
+        if (again && !named) {
+          // a second tap: name it, and keep the colour up a little past the label
+          showTip(item);
+          tipHideT = setTimeout(hideTip, 2600);
+          clearTimeout(litTimer);
+          litTimer = setTimeout(release, 3400);
+          return;
+        }
+        if (lit && lit !== item) { dim(lit); if (tipFor === lit) hideTip(); }
         if (!lit) watchPage();
         lit = item;
         item.classList.remove("is-dimming");
@@ -479,7 +561,7 @@
     /* ---------- GLIDE: continuous drift; hover glides to a soft stop ---------- */
     function startGlide() {
       var anim = null, lastWidth = 0, lastSet = 0, rate = 1, rafId = 0, driving = false;
-      var STOP_MS = 1700, GO_MS = 1800, BOUNCE = 2.2; // BOUNCE: 0 = none, ~2 = very subtle
+      var STOP_MS = 1700, GO_MS = 1800, BOUNCE = 0; // BOUNCE: 0 = none (glides to rest, no settle-back), ~2 = very subtle
 
       function layout() {
         var viewWidth = viewport.clientWidth, setNow = original.getBoundingClientRect().width;
@@ -510,11 +592,11 @@
       function glideToStop() {
         cancelGlide();
         if (!anim) { rate = 0; return; }
+        if (rate * STOP_MS / (3 + BOUNCE) >= 1) anim.pause(); // pause before reading the time, so the glide can't step back a hair
         var v0 = rate, t0 = anim.currentTime || 0;
         // distance chosen so the glide starts at exactly the current speed (no jolt)
         var dist = STOP_MS * v0 / (3 + BOUNCE);
         if (dist < 1) { rate = 0; anim.playbackRate = 0; return; }
-        anim.pause();
         driving = true;
         var start = performance.now(), last = start, lastPos = t0;
         (function step(now) {
