@@ -295,24 +295,46 @@
         setTimeout(function () { if (!item.classList.contains("is-lit")) item.classList.remove("is-dimming"); }, 1700);
       };
       var release = function () {
+        clearTimeout(litTimer);
+        unwatchPage();
         if (lit) dim(lit);
         lit = null;
         if (tapPaused) { tapPaused = false; hovered = false; if (tapHooks) tapHooks.out(); }
+      };
+      /* while a logo is lit, doing anything else on the page (tapping elsewhere, scrolling,
+         typing) lets it go straight away instead of waiting out the hold */
+      var litScroll = 0;
+      var onPageDown = function (e) { if (!viewport.contains(e.target)) release(); };
+      var onPageScroll = function () { if (Math.abs((window.scrollY || 0) - litScroll) > 30) release(); };
+      var watchPage = function () {
+        litScroll = window.scrollY || 0;
+        document.addEventListener("pointerdown", onPageDown, true);
+        document.addEventListener("keydown", release, true);
+        window.addEventListener("scroll", onPageScroll, { passive: true });
+      };
+      var unwatchPage = function () {
+        document.removeEventListener("pointerdown", onPageDown, true);
+        document.removeEventListener("keydown", release, true);
+        window.removeEventListener("scroll", onPageScroll);
       };
       viewport.addEventListener("pointerdown", function (e) {
         tap = e.pointerType === "mouse" ? null : { x: e.clientX, y: e.clientY, t: e.timeStamp };
       });
       viewport.addEventListener("pointermove", function (e) {
-        if (tap && Math.abs(e.clientX - tap.x) + Math.abs(e.clientY - tap.y) > 8) tap = null; // a swipe, not a tap
+        if (tap && Math.abs(e.clientX - tap.x) + Math.abs(e.clientY - tap.y) > 8) { // a swipe, not a tap
+          tap = null;
+          if (lit) release();
+        }
       });
       viewport.addEventListener("pointercancel", function () { tap = null; });
       viewport.addEventListener("pointerup", function (e) {
         var t = tap; tap = null;
         if (!t || e.timeStamp - t.t > 700) return;
         var item = e.target.closest && e.target.closest(".ssl-item");
-        if (!item || !viewport.contains(item)) return;
+        if (!item || !viewport.contains(item)) { if (lit) release(); return; } // tapped the space between logos
         blockClick = !!item.href && !item.classList.contains("is-lit");
         if (lit && lit !== item) dim(lit);
+        if (!lit) watchPage();
         lit = item;
         item.classList.remove("is-dimming");
         item.classList.add("is-lit");
@@ -323,7 +345,7 @@
       viewport.addEventListener("click", function (e) {
         if (blockClick) { e.preventDefault(); blockClick = false; }
       }, true);
-      cleanups.push(function () { clearTimeout(litTimer); });
+      cleanups.push(function () { clearTimeout(litTimer); unwatchPage(); });
     }
 
     var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
