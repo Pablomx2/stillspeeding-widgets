@@ -88,12 +88,32 @@
     "@media (prefers-reduced-motion:reduce){.ssv-viewport{scroll-behavior:auto}.ssv-root *,.ssv-root *::before,.ssv-root *::after{transition:none!important}}"
   ].join("\n");
 
+  /* Only download the font weights the page doesn't already have (the Squarespace site
+     already carries Dangrek and some Space Grotesk weights). */
+  function fontsHref() {
+    var have = [];
+    try {
+      document.fonts.forEach(function (f) {
+        var w = String(f.weight).replace("normal", "400").replace("bold", "700").split(" ");
+        have.push({ family: f.family.replace(/["']/g, ""), lo: +w[0], hi: +(w[1] || w[0]) });
+      });
+    } catch (e) {}
+    function missing(family, weight) {
+      return !have.some(function (h) { return h.family === family && h.lo <= weight && weight <= h.hi; });
+    }
+    var q = [];
+    if (missing("Dangrek", 400)) q.push("family=Dangrek");
+    var w = [400, 500, 600].filter(function (x) { return missing("Space Grotesk", x); });
+    if (w.length) q.push("family=Space+Grotesk:wght@" + w.join(";"));
+    return q.length ? "https://fonts.googleapis.com/css2?" + q.join("&") + "&display=swap" : null;
+  }
   function ensureAssets() {
-    if (!document.getElementById("ssw-fonts")) {
+    var fonts = fontsHref();
+    if (fonts && !document.getElementById("ssw-fonts")) {
       var l = document.createElement("link");
       l.id = "ssw-fonts";
       l.rel = "stylesheet";
-      l.href = "https://fonts.googleapis.com/css2?family=Dangrek&family=Space+Grotesk:wght@400;500;600&display=swap";
+      l.href = fonts;
       document.head.appendChild(l);
     }
     if (!document.getElementById("ssv-css")) {
@@ -234,10 +254,23 @@
       if (fallback && img.naturalWidth <= 120) { var f = fallback; fallback = null; img.src = f; return; }
       img.classList.add("is-loaded");
     };
-    img.onerror = function () { if (fallback) { var f = fallback; fallback = null; img.src = f; } };
+    img.onerror = function () {
+      // a smaller copy isn't there yet (a brand-new cover is still being resized) — use the original
+      if (img.srcset) { img.removeAttribute("srcset"); img.removeAttribute("sizes"); img.src = src; return; }
+      if (fallback) { var f = fallback; fallback = null; img.src = f; }
+    };
+    // our own covers have 480px and 960px WebP copies in covers/sizes/ (see scripts/cover-sizes.mjs);
+    // the browser picks the smallest one that is sharp at the card's size
+    var own = src && !/^(data|blob):/i.test(src) && src.match(/^(.*\/)?covers\/([^\/?#]+)\.(jpe?g|png|webp)$/i);
+    if (own) {
+      var dir = (own[1] || "") + "covers/sizes/" + own[2];
+      img.sizes = cardSizes;
+      img.srcset = dir + "-480.webp 480w, " + dir + "-960.webp 960w, " + src + " 1280w";
+    }
     if (src) img.src = src;
     return img;
   }
+  var cardSizes = "(max-width:640px) 86vw, (max-width:991px) 45vw, 33vw";
 
   W.renderVideos = function (root, data) {
     ensureAssets();
@@ -257,6 +290,10 @@
     if (settings.edgeToEdge !== false && root.dataset.bleed !== "false") wrap.classList.add("ssv-bleed");
     wrap.style.setProperty("--ssv-per", settings.perViewDesktop || 3);
     root.appendChild(wrap);
+    // how wide a card shows, so covers load at the right size (matches the --ssv-per breakpoints)
+    var boxW = Math.round(wrap.getBoundingClientRect().width) || 0;
+    cardSizes = "(max-width:640px) 86vw, (max-width:991px) 45vw, " +
+      (boxW ? Math.ceil(boxW / (settings.perViewDesktop || 3)) + "px" : Math.ceil(100 / (settings.perViewDesktop || 3)) + "vw");
 
     if (!videos.length) {
       wrap.appendChild(el("div", "ssv-empty", "No videos yet."));
@@ -501,7 +538,8 @@
   function boot() {
     var els = document.querySelectorAll(".ss-videos:not([data-ready])");
     if (!els.length) return;
-    var req = fetch(BASE + "data/videos.json?t=" + Date.now()).then(function (r) { return r.json(); });
+    // "no-cache": always check for a newer list, but reuse the saved copy when nothing changed
+    var req = fetch(BASE + "data/videos.json", { cache: "no-cache" }).then(function (r) { return r.json(); });
     Array.prototype.forEach.call(els, function (el) {
       el.setAttribute("data-ready", "1");
       req.then(function (d) { W.renderVideos(el, d); }).catch(function (e) { console.warn("[ss-videos]", e); });

@@ -654,7 +654,7 @@
 
   function clean(kind, source) {
     var d = JSON.parse(JSON.stringify(source || state[kind]));
-    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; if (l.hidden) o.hidden = true; if (l.wiki) o.wiki = l.wiki; ["ink", "cy", "el", "er"].forEach(function (k) { if (l[k] != null) o[k] = l[k]; }); return o; });
+    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; if (l.hidden) o.hidden = true; if (l.wiki) o.wiki = l.wiki; ["ink", "cy", "el", "er", "t"].forEach(function (k) { if (l[k] != null) o[k] = l[k]; }); return o; });
     if (kind === "videos") d.videos = d.videos.map(function (v) {
       var o = { video: v.video, title: v.title || "", meta: v.meta || "" };
       if (v.link) { o.link = v.link; if (v.linkText) o.linkText = v.linkText; }
@@ -1122,7 +1122,7 @@
     previewTimer = setTimeout(function () {
       if (!frameReady || tab === "install" || !state[tab]) return;
       var data = JSON.parse(JSON.stringify(state[tab]));
-      if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, hidden: l.hidden, ink: l.ink, cy: l.cy, el: l.el, er: l.er, src: l.preview || resolveSrc(l.src) }; });
+      if (tab === "logos") data.logos = data.logos.map(function (l) { return { name: l.name, link: l.link, hidden: l.hidden, ink: l.ink, cy: l.cy, el: l.el, er: l.er, t: l.t, src: l.preview || resolveSrc(l.src) }; });
       if (tab === "videos") data.videos = data.videos.map(function (v) {
         var o = Object.assign({}, v);
         delete o.pending; delete o.preview;
@@ -1925,18 +1925,20 @@
     ctx.putImageData(img, 0, 0);
     return mode;
   }
-  function trim(c) {
+  // pad: breathing room kept around the artwork, as a share of its size (the saved file uses 0)
+  function trim(c, pad) {
     var w = c.width, h = c.height, d = c.getContext("2d").getImageData(0, 0, w, h).data;
     var x0 = w, y0 = h, x1 = -1, y1 = -1;
     for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
       if (d[(y * w + x) * 4 + 3] > 12) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     }
     if (x1 < 0) return c;
-    var pad = Math.round(Math.max(x1 - x0, y1 - y0) * 0.03) + 1;
+    pad = pad === 0 ? 0 : Math.round(Math.max(x1 - x0, y1 - y0) * 0.03) + 1;
     x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(w - 1, x1 + pad); y1 = Math.min(h - 1, y1 + pad);
     var out = document.createElement("canvas");
     out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
     out.getContext("2d").drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+    out._box = { x: x0, y: y0, w: out.width, h: out.height };
     return out;
   }
   /* Visual-weight measurements, saved with each logo so the banner can align and space
@@ -1961,7 +1963,50 @@
       er: r2(right / (strip * h) / ink)
     };
   }
-  /* source: { src, isSvg, svgText? }  mode: "all" | "outside" | "keep" */
+  /* Crop an SVG to its artwork by tightening its viewBox (c = the SVG drawn by toCanvas).
+     Returns null when the drawing can't be mapped back onto the viewBox — the banner then trims it itself. */
+  function trimSvg(text, c) {
+    try {
+      var doc = new DOMParser().parseFromString(text, "image/svg+xml"), svg = doc.documentElement;
+      if (doc.querySelector("parsererror")) return null;
+      var par = svg.getAttribute("preserveAspectRatio");
+      if (par && !/^\s*xMidYMid(\s+meet)?\s*$/.test(par)) return null;
+      var vb = (svg.getAttribute("viewBox") || "").split(/[\s,]+/).map(Number);
+      if (vb.length !== 4 || vb.some(isNaN) || vb[2] <= 0 || vb[3] <= 0) {
+        var aw = parseFloat(svg.getAttribute("width")), ah = parseFloat(svg.getAttribute("height"));
+        if (!aw || !ah || /%/.test(svg.getAttribute("width") + svg.getAttribute("height"))) return null;
+        vb = [0, 0, aw, ah];
+      }
+      var t = trim(c, 0), box = t._box;
+      if (!box) return text;
+      // the viewBox is scaled to fit the canvas and centred (the SVG default)
+      var k = Math.min(c.width / vb[2], c.height / vb[3]), ox = (c.width - vb[2] * k) / 2, oy = (c.height - vb[3] * k) / 2;
+      var r = function (v) { return Math.round(v * 100) / 100; };
+      var x0 = Math.max(vb[0], vb[0] + (box.x - ox) / k), y0 = Math.max(vb[1], vb[1] + (box.y - oy) / k);
+      var x1 = Math.min(vb[0] + vb[2], vb[0] + (box.x + box.w - ox) / k), y1 = Math.min(vb[1] + vb[3], vb[1] + (box.y + box.h - oy) / k);
+      svg.setAttribute("viewBox", [r(x0), r(y0), r(x1 - x0), r(y1 - y0)].join(" "));
+      svg.setAttribute("width", r(x1 - x0));
+      svg.setAttribute("height", r(y1 - y0));
+      return new XMLSerializer().serializeToString(svg);
+    } catch (e) { return null; }
+  }
+  // the banner never shows a logo taller than 120px (80px size × 1.5), so 240px covers sharp screens
+  function shrink(c, maxH, maxW) {
+    var k = Math.min(1, maxH / c.height, maxW / c.width);
+    if (k >= 1) return c;
+    var out = document.createElement("canvas");
+    out.width = Math.max(1, Math.round(c.width * k)); out.height = Math.max(1, Math.round(c.height * k));
+    var ctx = out.getContext("2d");
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(c, 0, 0, out.width, out.height);
+    return out;
+  }
+  function encodeLogo(c) {
+    var webp = c.toDataURL("image/webp", 0.9); // much smaller than PNG; browsers that can't make WebP give PNG back
+    return /^data:image\/webp/.test(webp) ? { dataUrl: webp, ext: "webp" } : { dataUrl: c.toDataURL("image/png"), ext: "png" };
+  }
+  /* source: { src, isSvg, svgText? }  mode: "all" | "outside" | "keep"
+     t: 1 marks a file that's already cropped to its artwork, so the banner can load it as is */
   function processLogo(source, mode) {
     var src = source.svgText ? svgDataUrl(source.svgText) : source.src;
     return loadImage(src).then(function (img) {
@@ -1969,12 +2014,15 @@
       var info = analyseEdges(c);
       // already-transparent vector logos are kept as SVG — sharpest possible
       if (info.kind === "clear" && source.svgText) {
-        return { dataUrl: "data:image/svg+xml;base64," + b64encodeText(source.svgText), ext: "svg", bg: "clear", weight: measureWeight(trim(c)) };
+        var tight = trimSvg(source.svgText, c);
+        return { dataUrl: "data:image/svg+xml;base64," + b64encodeText(tight || source.svgText), ext: "svg", bg: "clear",
+                 weight: Object.assign(measureWeight(trim(c)), tight ? { t: 1 } : {}) };
       }
       var used = mode;
       if (info.kind === "solid" && mode !== "keep") used = removeBackground(c, info.color, mode);
-      var out = trim(c);
-      return { dataUrl: out.toDataURL("image/png"), ext: "png", bg: info.kind, weight: measureWeight(out), mode: used };
+      // measured with a little room around it (as always); saved cropped right to the artwork
+      var out = trim(c), enc = encodeLogo(shrink(trim(c, 0), 240, 900));
+      return { dataUrl: enc.dataUrl, ext: enc.ext, bg: info.kind, weight: Object.assign(measureWeight(out), { t: 1 }), mode: used };
     });
   }
   function logoPath(name, ext) { return "logos/" + slug(name) + "-" + Date.now().toString(36).slice(-5) + "." + ext; }
@@ -2003,6 +2051,7 @@
         imgBox.classList.add("working");
         processLogo(l._orig, mode).then(function (r) {
           l._mode = mode;
+          delete l.t;
           Object.assign(l, r.weight);
           l.preview = r.dataUrl;
           l.pending = r.dataUrl.split(",")[1];

@@ -22,3 +22,7 @@ Per-block options: `data-theme="dark"` (black sections), `data-style="mono"` (lo
 `data-heading="Select clients"` (logos only), `data-per-view="2"` (videos only).
 
 Changes published from the admin go live about a minute later (GitHub Pages rebuild).
+
+Covers get small WebP copies in `covers/sizes/` automatically (Cover sizes workflow, `scripts/cover-sizes.mjs`);
+the carousel picks the size that fits the screen. Logos are saved already cropped (`"t": 1` in `data/logos.json`),
+so the banner shows them without processing them in the visitor's browser.

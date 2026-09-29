@@ -1,0 +1,40 @@
+name: Cover sizes
+
+# When a cover picture is added (by the admin app), make the small WebP copies the carousel
+# loads on phones and smaller screens. See scripts/cover-sizes.mjs.
+on:
+  push:
+    branches: [main]
+    paths: ["covers/**", "!covers/sizes/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: cover-sizes
+  cancel-in-progress: false
+
+jobs:
+  sizes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make sizes
+        run: |
+          npm install --no-save --no-package-lock --silent sharp@0.35.5
+          node scripts/cover-sizes.mjs
+      - name: Save sizes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add -A covers/sizes
+          if git diff --cached --quiet; then echo "Nothing new."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add cover sizes"
+          git pull --rebase origin main
+          git push
+          # pushes made by Actions don't redeploy the site on their own
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || true

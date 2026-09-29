@@ -26,7 +26,8 @@
       "ink": 0.3,
       "cy": 0.487,
       "el": 1,
-      "er": 0.97
+      "er": 0.97,
+      "t": 1
     },
     {
       "name": "Whatsapp",
@@ -35,7 +36,8 @@
       "ink": 0.33,
       "cy": 0.529,
       "el": 1.52,
-      "er": 1.1
+      "er": 1.1,
+      "t": 1
     },
     {
       "name": "Netflix",
@@ -44,16 +46,18 @@
       "ink": 0.44,
       "cy": 0.45,
       "el": 1.64,
-      "er": 1.3
+      "er": 1.3,
+      "t": 1
     },
     {
       "name": "Toyota",
-      "src": "logos/toyota-f1zvu.png",
+      "src": "logos/toyota-f1zvu.webp",
       "wiki": "Toyota",
       "ink": 0.29,
       "cy": 0.479,
       "el": 0.92,
-      "er": 0.97
+      "er": 0.97,
+      "t": 1
     },
     {
       "name": "WWE",
@@ -62,7 +66,8 @@
       "ink": 0.3,
       "cy": 0.548,
       "el": 0.2,
-      "er": 0.36
+      "er": 0.36,
+      "t": 1
     },
     {
       "name": "Meta Platforms",
@@ -71,16 +76,18 @@
       "ink": 0.39,
       "cy": 0.534,
       "el": 1.2,
-      "er": 1.09
+      "er": 1.09,
+      "t": 1
     },
     {
       "name": "National Basketball Association",
-      "src": "logos/national-basketball-association-ftmay.png",
+      "src": "logos/national-basketball-association-ftmay.webp",
       "wiki": "National Basketball Association",
       "ink": 0.45,
       "cy": 0.523,
       "el": 0.97,
-      "er": 0.92
+      "er": 0.92,
+      "t": 1
     },
     {
       "name": "Adidas",
@@ -89,7 +96,8 @@
       "ink": 0.44,
       "cy": 0.647,
       "el": 0.35,
-      "er": 0.4
+      "er": 0.4,
+      "t": 1
     },
     {
       "name": "Starbucks",
@@ -98,25 +106,28 @@
       "ink": 0.43,
       "cy": 0.459,
       "el": 0.56,
-      "er": 0.56
+      "er": 0.56,
+      "t": 1
     },
     {
       "name": "Fuerza Regida",
-      "src": "logos/fuerza-regida-teok3.png",
+      "src": "logos/fuerza-regida-teok3.webp",
       "wiki": "Fuerza Regida",
       "ink": 0.47,
       "cy": 0.466,
       "el": 0.09,
-      "er": 0.42
+      "er": 0.42,
+      "t": 1
     },
     {
       "name": "Karol g",
-      "src": "logos/karol-g-tf8a6.png",
+      "src": "logos/karol-g-tf8a6.webp",
       "wiki": "Karol G",
       "ink": 0.27,
       "cy": 0.522,
       "el": 0.83,
-      "er": 0.89
+      "er": 0.89,
+      "t": 1
     },
     {
       "name": "Billboard",
@@ -125,16 +136,18 @@
       "ink": 0.6,
       "cy": 0.585,
       "el": 1.13,
-      "er": 1.13
+      "er": 1.13,
+      "t": 1
     },
     {
       "name": "American Express",
-      "src": "logos/american-express-f7emf.png",
+      "src": "logos/american-express-f7emf.webp",
       "wiki": "American Express",
       "ink": 1,
       "cy": 0.5,
       "el": 1,
-      "er": 0.98
+      "er": 0.98,
+      "t": 1
     },
     {
       "name": "Waymo",
@@ -143,16 +156,18 @@
       "ink": 0.39,
       "cy": 0.391,
       "el": 0.54,
-      "er": 0.53
+      "er": 0.53,
+      "t": 1
     },
     {
       "name": "Wendy's",
-      "src": "logos/wendys-ti5bx.png",
+      "src": "logos/wendys-ti5bx.webp",
       "wiki": "Wendy's",
       "ink": 0.69,
       "cy": 0.521,
       "el": 0.34,
-      "er": 0.36
+      "er": 0.36,
+      "t": 1
     },
     {
       "name": "Hot Wheels",
@@ -161,7 +176,8 @@
       "ink": 0.31,
       "cy": 0.467,
       "el": 0.76,
-      "er": 0.35
+      "er": 0.35,
+      "t": 1
     },
     {
       "name": "Ram",
@@ -170,7 +186,8 @@
       "ink": 0.25,
       "cy": 0.572,
       "el": 0.43,
-      "er": 0.42
+      "er": 0.42,
+      "t": 1
     },
     {
       "name": "Lyft",
@@ -179,7 +196,8 @@
       "ink": 0.54,
       "cy": 0.46,
       "el": 1.37,
-      "er": 0.96
+      "er": 0.96,
+      "t": 1
     },
     {
       "name": "Kalshi",
@@ -188,7 +206,8 @@
       "ink": 0.5,
       "cy": 0.56,
       "el": 1.24,
-      "er": 1.14
+      "er": 1.14,
+      "t": 1
     },
     {
       "name": "Brooks",
@@ -197,7 +216,8 @@
       "ink": 0.33,
       "cy": 0.492,
       "el": 1.04,
-      "er": 1
+      "er": 1,
+      "t": 1
     },
     {
       "name": "Audible",
@@ -206,7 +226,8 @@
       "ink": 0.22,
       "cy": 0.513,
       "el": 1.03,
-      "er": 0.63
+      "er": 0.63,
+      "t": 1
     }
   ]
 }

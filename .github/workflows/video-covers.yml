@@ -31,6 +31,12 @@ jobs:
         run: node scripts/video-covers.mjs
         env:
           TEST_URL: ${{ inputs.test_url }}
+      # (pushes made here don't start the Cover sizes workflow, so make the small copies now)
+      - name: Make cover sizes
+        if: ${{ !inputs.test_url }}
+        run: |
+          npm install --no-save --no-package-lock --silent sharp@0.35.5
+          node scripts/cover-sizes.mjs
       - name: Save covers
         if: ${{ !inputs.test_url }}
         env:
@@ -42,7 +48,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add covers data/videos.json
+          git add -A covers data/videos.json
           git commit -m "Add video covers"
           git pull --rebase origin main
           git push

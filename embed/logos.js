@@ -42,12 +42,32 @@
     "@media (max-width:640px){.ssl-root{--ssl-gap:48px!important;--ssl-fade:10%}.ssl-root .ssl-item img{height:calc(var(--ssl-h,var(--ssl-height)) * .78);transform:translateY(calc(var(--ssl-h,var(--ssl-height)) * .78 * var(--ssl-dy,0)));max-width:calc(var(--ssl-max-width) * .8)}.ssl-heading{font-size:13px;gap:12px;margin-bottom:22px}}"
   ].join("\n");
 
+  /* Only download the font weights the page doesn't already have (the Squarespace site
+     already carries Dangrek and some Space Grotesk weights). */
+  function fontsHref() {
+    var have = [];
+    try {
+      document.fonts.forEach(function (f) {
+        var w = String(f.weight).replace("normal", "400").replace("bold", "700").split(" ");
+        have.push({ family: f.family.replace(/["']/g, ""), lo: +w[0], hi: +(w[1] || w[0]) });
+      });
+    } catch (e) {}
+    function missing(family, weight) {
+      return !have.some(function (h) { return h.family === family && h.lo <= weight && weight <= h.hi; });
+    }
+    var q = [];
+    if (missing("Dangrek", 400)) q.push("family=Dangrek");
+    var w = [400, 500, 600].filter(function (x) { return missing("Space Grotesk", x); });
+    if (w.length) q.push("family=Space+Grotesk:wght@" + w.join(";"));
+    return q.length ? "https://fonts.googleapis.com/css2?" + q.join("&") + "&display=swap" : null;
+  }
   function ensureAssets() {
-    if (!document.getElementById("ssw-fonts")) {
+    var fonts = fontsHref();
+    if (fonts && !document.getElementById("ssw-fonts")) {
       var l = document.createElement("link");
       l.id = "ssw-fonts";
       l.rel = "stylesheet";
-      l.href = "https://fonts.googleapis.com/css2?family=Dangrek&family=Space+Grotesk:wght@400;500;600&display=swap";
+      l.href = fonts;
       document.head.appendChild(l);
     }
     if (!document.getElementById("ssl-css")) {
@@ -134,8 +154,10 @@
       }
       var img = document.createElement("img");
       var src = logo.preview || resolve(logo.src, opts.base);
-      // ask for permission to read the pixels (needed for trimming); if the host refuses, load it plainly
-      if (!/^data:/.test(src)) {
+      // logos saved by the app are already cropped to their artwork (logo.t), so they load as is;
+      // anything else gets trimmed here — ask for permission to read the pixels, or load it plainly
+      if (logo.t) img.setAttribute("data-trimmed", "1");
+      else if (!/^data:/.test(src)) {
         img.crossOrigin = "anonymous";
         img.setAttribute("data-cors", "1");
         img.addEventListener("error", function retry() {
@@ -608,7 +630,8 @@
   function boot() {
     var els = document.querySelectorAll(".ss-logos:not([data-ready])");
     if (!els.length) return;
-    var req = fetch(BASE + "data/logos.json?t=" + Date.now()).then(function (r) { return r.json(); });
+    // "no-cache": always check for a newer list, but reuse the saved copy when nothing changed
+    var req = fetch(BASE + "data/logos.json", { cache: "no-cache" }).then(function (r) { return r.json(); });
     Array.prototype.forEach.call(els, function (el) {
       el.setAttribute("data-ready", "1");
       req.then(function (d) { W.renderLogos(el, d); }).catch(function (e) { console.warn("[ss-logos]", e); });
