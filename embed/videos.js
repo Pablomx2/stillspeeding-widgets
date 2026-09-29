@@ -372,11 +372,14 @@
         else play(item, info, media);
       });
       media.appendChild(btn);
+      var cover = media.querySelector("img");
+      if (cover && item.title && !isClone) cover.alt = item.title;
       card.appendChild(media);
 
       if (item.title || item.meta || item.link) {
         var infoEl = el("div", "ssv-info");
-        if (item.title) infoEl.appendChild(el("h4", "ssv-title", item.title));
+        // loop copies get a plain title so each video name is a heading only once on the page
+        if (item.title) infoEl.appendChild(el(isClone ? "div" : "h3", "ssv-title", item.title));
         if (item.meta || item.link) {
           var meta = el("div", "ssv-meta");
           meta.appendChild(el("span", "ssv-meta-text", item.meta || ""));

@@ -171,7 +171,7 @@
         });
       }
       img.src = src;
-      img.alt = logo.name || "";
+      img.alt = logo.name ? logo.name + " logo" : "";
       img.decoding = "async";
       img.draggable = false;
       // weight measurements saved by the app when the logo was added (see measureWeight in index.html)
@@ -465,6 +465,8 @@
         var clone = original.cloneNode(true);
         clone.setAttribute("aria-hidden", "true");
         Array.prototype.forEach.call(clone.querySelectorAll("a"), function (a) { a.tabIndex = -1; });
+        // the copies repeat the set for the loop — describe each logo only once
+        Array.prototype.forEach.call(clone.querySelectorAll("img"), function (img) { img.alt = ""; });
         track.appendChild(clone);
       }
       return setWidth;
