@@ -20,15 +20,6 @@
   },
   "logos": [
     {
-      "name": "Univision",
-      "src": "logos/univision-8y3n5.svg",
-      "ink": 0.43,
-      "cy": 0.442,
-      "el": 0.2,
-      "er": 0.2,
-      "t": 1
-    },
-    {
       "name": "Google",
       "src": "logos/google-f3j7b.svg",
       "wiki": "Google",
@@ -236,6 +227,15 @@
       "cy": 0.513,
       "el": 1.03,
       "er": 0.63,
+      "t": 1
+    },
+    {
+      "name": "Univision",
+      "src": "logos/univision-8y3n5.svg",
+      "ink": 0.43,
+      "cy": 0.442,
+      "el": 0.2,
+      "er": 0.2,
       "t": 1
     }
   ]
