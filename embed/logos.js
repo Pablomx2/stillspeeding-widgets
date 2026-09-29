@@ -28,6 +28,9 @@
     ".ssl-root.ssl-mono .ssl-item img{filter:grayscale(1) brightness(0)}",
     ".ssl-root.ssl-mono.ssl-dark .ssl-item img{filter:grayscale(1) brightness(0) invert(1)}",
     "@media (hover:hover){.ssl-root.ssl-hover .ssl-item:hover img{filter:none;opacity:1}}",
+    /* touch screens: a tap brings the colour up, holds it, then lets it drift back slowly */
+    ".ssl-root.ssl-hover .ssl-item.is-lit img{filter:none;opacity:1;transition-duration:.6s}",
+    ".ssl-root .ssl-item.is-dimming img{transition-duration:1.6s;transition-timing-function:cubic-bezier(.4,0,.2,1)}",
     ".ssl-root .ssl-item:focus-visible{outline:2px solid var(--ssl-ink);outline-offset:8px;border-radius:6px}",
     ".ssl-root .ssl-item:focus-visible img{filter:none;opacity:1}",
     ".ssl-root.ssl-static .ssl-track{width:100%}",
@@ -280,6 +283,49 @@
       return loaded(img).then(function () { return tidy(img); });
     })).then(function () { balance(); opticalCentre(); });
 
+    /* Tap to colour: phones can't hover, so a tap on a logo does what hovering does on a computer —
+       its colour comes up, the banner eases to a stop, and after a moment both drift back.
+       On a logo with a link, the first tap colours it and a second tap opens it. */
+    var tapHooks = null, lit = null, litTimer = 0, tapPaused = false, blockClick = false;
+    if (S.colorOnHover) {
+      var tap = null;
+      var dim = function (item) {
+        item.classList.remove("is-lit");
+        item.classList.add("is-dimming");
+        setTimeout(function () { if (!item.classList.contains("is-lit")) item.classList.remove("is-dimming"); }, 1700);
+      };
+      var release = function () {
+        if (lit) dim(lit);
+        lit = null;
+        if (tapPaused) { tapPaused = false; hovered = false; if (tapHooks) tapHooks.out(); }
+      };
+      viewport.addEventListener("pointerdown", function (e) {
+        tap = e.pointerType === "mouse" ? null : { x: e.clientX, y: e.clientY, t: e.timeStamp };
+      });
+      viewport.addEventListener("pointermove", function (e) {
+        if (tap && Math.abs(e.clientX - tap.x) + Math.abs(e.clientY - tap.y) > 8) tap = null; // a swipe, not a tap
+      });
+      viewport.addEventListener("pointercancel", function () { tap = null; });
+      viewport.addEventListener("pointerup", function (e) {
+        var t = tap; tap = null;
+        if (!t || e.timeStamp - t.t > 700) return;
+        var item = e.target.closest && e.target.closest(".ssl-item");
+        if (!item || !viewport.contains(item)) return;
+        blockClick = !!item.href && !item.classList.contains("is-lit");
+        if (lit && lit !== item) dim(lit);
+        lit = item;
+        item.classList.remove("is-dimming");
+        item.classList.add("is-lit");
+        if (!tapPaused && !hovered && tapHooks) { tapPaused = true; hovered = true; tapHooks.in(); }
+        clearTimeout(litTimer);
+        litTimer = setTimeout(release, 2600);
+      });
+      viewport.addEventListener("click", function (e) {
+        if (blockClick) { e.preventDefault(); blockClick = false; }
+      }, true);
+      cleanups.push(function () { clearTimeout(litTimer); });
+    }
+
     var reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
     var mode = root.dataset.animation || S.animation || "glide";
     if (["glide", "step", "fade", "still"].indexOf(mode) < 0) mode = "glide";
@@ -314,6 +360,7 @@
     }
     function watchHover(onIn, onOut) {
       if (!S.pauseOnHover) return;
+      tapHooks = { in: onIn || function () {}, out: onOut || function () {} }; // a tap pauses like a hover
       viewport.addEventListener("pointerenter", function (e) { if (e.pointerType !== "mouse") return; hovered = true; if (onIn) onIn(); });
       viewport.addEventListener("pointerleave", function (e) { if (e.pointerType !== "mouse") return; hovered = false; if (onOut) onOut(); });
       viewport.addEventListener("focusin", function () { hovered = true; if (onIn) onIn(); });
