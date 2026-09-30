@@ -1728,7 +1728,8 @@
                : info.type === "vimeo" ? "https://vimeo.com/api/oembed.json?url=" + encodeURIComponent(url) : null;
     if (oembed) fetch(oembed).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       if (!d || v.title) return;
-      v.title = (d.title || "").replace(/\s*\|\s*(Netflix|Official.*)$/i, "").replace(/\s*\((Official[^)]*)\)\s*$/i, "").trim();
+      v.title = (d.title || "").replace(/\s*\|\s*(Netflix|Official.*)$/i, "").replace(/\s*\((Official[^)]*)\)\s*$/i, "")
+        .replace(/\s*\u2014\s*|\s+\u2013\s+/g, " - ").trim(); // "A — B" / "A – B" → "A - B", like the other titles
       renderVideoList(state.videos.videos.indexOf(v));
       changed();
     }).catch(function () {});
