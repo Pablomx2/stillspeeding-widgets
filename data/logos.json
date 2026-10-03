@@ -180,16 +180,6 @@
       "t": 1
     },
     {
-      "name": "Ram",
-      "src": "logos/ram-f24zp.svg",
-      "wiki": "Ram Trucks",
-      "ink": 0.25,
-      "cy": 0.572,
-      "el": 0.43,
-      "er": 0.42,
-      "t": 1
-    },
-    {
       "name": "Lyft",
       "src": "logos/lyft-sd6g2.svg",
       "wiki": "Lyft",
