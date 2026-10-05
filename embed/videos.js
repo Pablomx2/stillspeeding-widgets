@@ -3,11 +3,15 @@
      <div class="ss-videos"></div>
      <script src="https://<user>.github.io/stillspeeding-widgets/embed/videos.js"></script>
    Optional per-block overrides: data-theme="dark", data-per-view="2", data-loop="false"
-   Content comes from data/videos.json (edited with the admin app). */
+   Content comes from data/videos.json (edited with the admin app). A copy of it is baked into
+   this file (INLINE below, refreshed by the Video covers workflow after each publish) so the
+   carousel draws without a second download; the live list is still checked for newer changes. */
 (function () {
   var script = document.currentScript;
   var BASE = script ? script.src.replace(/embed\/[^\/?#]*([?#].*)?$/, "") : "";
   var W = (window.SSWidgets = window.SSWidgets || {});
+  // copy of data/videos.json, written by scripts/inline-videos.mjs (keep the markers)
+  var INLINE = /*INLINE-DATA*/{"settings":{"theme":"light","perViewDesktop":3,"softThumbnails":false,"openLinksInNewTab":true,"edgeToEdge":true,"loop":true,"playIn":"popup"},"videos":[{"video":"https://www.youtube.com/watch?v=o8U3vvXWt1o","title":"Songs to Listen to in a Wendy's Parking Lot","meta":"Commercial","thumbnail":"covers/yt-o8U3vvXWt1o.jpg"},{"video":"https://www.youtube.com/watch?v=3sB4Iv_tM7U","title":"ADELA - Nicole Kidman","meta":"Music Video","thumbnail":"covers/yt-3sB4Iv_tM7U.jpg","wiki":"Nicole Kidman"},{"video":"https://www.instagram.com/p/DdCELxiBsVE/","title":"Google x First Times with Mika Abdalla","meta":"Commercial","thumbnail":"covers/ig-DdCELxiBsVE.jpg","wiki":"Google|Mika Abdalla"},{"video":"https://www.youtube.com/watch?v=-gm2ncZDJPU","title":"WWE 2K25: Netflix Edition","meta":"Commercial","thumbnail":"covers/yt--gm2ncZDJPU.jpg","wiki":"WWE|Netflix"},{"video":"https://www.youtube.com/watch?v=NLDida6fglw","title":"Project Hail Mary","meta":"Youtube Content","thumbnail":"covers/yt-NLDida6fglw.jpg","wiki":"Project Hail Mary (film)"},{"video":"https://www.youtube.com/watch?v=siL-RoC8haQ","title":"LISA - FUTW (Vixi Solo Version)","meta":"Behind the scenes","thumbnail":"covers/yt-siL-RoC8haQ.jpg","wiki":"Lisa (rapper)"},{"video":"https://www.youtube.com/watch?v=qTm4W_VRs3Q","title":"Kendrick and SZA GNX Tour Skit","meta":"Tour Assets","thumbnail":"covers/yt-qTm4W_VRs3Q.jpg","wiki":"Kendrick Lamar|SZA"},{"video":"https://www.youtube.com/watch?v=I-rOF9se14w","title":"LISA - When I'm With You","meta":"Behind the scenes","thumbnail":"covers/yt-I-rOF9se14w.jpg","wiki":"Lisa (rapper)"},{"video":"https://www.youtube.com/watch?v=jkWDNE8Tjtc","title":"Meghan Trainor - Still Don't Care","meta":"Music Video","thumbnail":"covers/yt-jkWDNE8Tjtc.jpg","wiki":"Meghan Trainor"},{"video":"https://www.instagram.com/p/DcjEbZhuqd7/","title":"Waymo x Martha Stewart","meta":"Commercial","thumbnail":"covers/ig-DcjEbZhuqd7.jpg","coverPos":"50.0% 26.5%","wiki":"Waymo|Martha Stewart"},{"video":"https://www.youtube.com/watch?v=gE-rcACBTZU","title":"Calle 24, Fuerza Regida - Noche Perfecta","meta":"Music Video","thumbnail":"covers/yt-gE-rcACBTZU.jpg","wiki":"Fuerza Regida"},{"video":"https://www.instagram.com/p/DdWq3eqDps5/","title":"Audible - En Otras Palabras","meta":"Latino Heritage Month Campaign","thumbnail":"covers/ig-DdWq3eqDps5.jpg","coverPos":"50.0% 31.1%","wiki":"Audible (service)"},{"video":"https://www.youtube.com/watch?v=p4bqpSJwguw","title":"Revolve - My Current Rotation","meta":"Youtube Content","thumbnail":"covers/yt-p4bqpSJwguw.jpg"},{"video":"https://www.instagram.com/p/Ddjph23J89j/","title":"Audible - En Otras Palabras 2","meta":"Latino Heritage Month Campaign","thumbnail":"covers/ig-Ddjph23J89j.jpg","hidden":true,"coverPos":"50.0% 33.1%","wiki":"Audible (service)"}]}/*END-INLINE-DATA*/;
 
   var CSS = [
     ".ssv-root{--ssv-ink:#000;--ssv-paper:#fafafa;--ssv-muted:rgba(0,0,0,.55);--ssv-line:rgba(0,0,0,.14);--ssv-radius:20px;--ssv-gap:28px;--ssv-per:3;--ssv-head:'Dangrek','Arial Narrow',sans-serif;--ssv-body:'Space Grotesk',system-ui,sans-serif;position:relative;width:100%;color:var(--ssv-ink);font-family:var(--ssv-body);-webkit-tap-highlight-color:transparent}",
@@ -543,9 +547,13 @@
     if (!els.length) return;
     // "no-cache": always check for a newer list, but reuse the saved copy when nothing changed
     var req = fetch(BASE + "data/videos.json", { cache: "no-cache" }).then(function (r) { return r.json(); });
+    var inlineKey = INLINE ? JSON.stringify(INLINE) : "";
     Array.prototype.forEach.call(els, function (el) {
       el.setAttribute("data-ready", "1");
-      req.then(function (d) { W.renderVideos(el, d); }).catch(function (e) { console.warn("[ss-videos]", e); });
+      // draw straight away from the built-in copy, then redraw only if the live list is newer
+      if (INLINE) W.renderVideos(el, INLINE);
+      req.then(function (d) { if (JSON.stringify(d) !== inlineKey) W.renderVideos(el, d); })
+        .catch(function (e) { console.warn("[ss-videos]", e); });
     });
   }
   if (!script || !script.hasAttribute("data-no-boot")) {
