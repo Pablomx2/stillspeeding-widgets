@@ -123,7 +123,8 @@
   /* drag to reorder */
   .handle, .thumb, .logo-img { cursor: grab; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   body.sorting, body.sorting * { cursor: grabbing !important; -webkit-user-select: none; user-select: none; }
-  body > .drag-ghost { position: fixed !important; z-index: 60; margin: 0; pointer-events: none; box-shadow: 0 20px 44px rgba(0,0,0,.22), 0 2px 6px rgba(0,0,0,.12); transform: scale(1.03) rotate(-.6deg); border-color: #000 !important; background: #fff; animation: none; transition: none; box-sizing: border-box; }
+  .drag-layer { position: fixed; top: 0; left: 0; width: 0; height: 0; z-index: 60; pointer-events: none; }
+  .drag-layer > .drag-ghost { position: fixed !important; z-index: 60; margin: 0; pointer-events: none; box-shadow: 0 20px 44px rgba(0,0,0,.22), 0 2px 6px rgba(0,0,0,.12); transform: scale(1.03) rotate(-.6deg); border-color: #000 !important; background: #fff; animation: none; transition: none; box-sizing: border-box; }
   .drag-placeholder { border-style: dashed !important; border-color: var(--line-strong) !important; background: transparent !important; box-shadow: none !important; }
   .drag-placeholder > * { visibility: hidden; }
   .press { transform: scale(.98); transition: transform .26s ease; }
@@ -364,10 +365,46 @@
   .logo-grid.compact .compact-title { display: block; font-size: 12px; }
   .logo-grid.compact .logo-actions { justify-content: flex-start; }
   .logo-grid.compact .logo-actions > :not(.pos) { display: none; }
+  /* pins */
+  .pin-tag { position: absolute; top: 5px; left: 5px; width: 20px; height: 20px; border-radius: 50%; background: #000; color: #fff; display: grid; place-items: center; pointer-events: none; }
+  .pin-tag svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .logo-img .pin-tag { top: 6px; left: 6px; }
+  .logo-img .new + .pin-tag { left: auto; right: 6px; }
+  /* grip on logos: grab it to drag straight away, even on phones */
+  .logo-grid.compact .compact-title { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+  .logo-grid.compact .compact-title > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .grip-btn { flex: none; width: 28px; height: 28px; margin: -6px -4px -6px 0; border-radius: 8px; display: grid; place-items: center; color: var(--ink); touch-action: none; cursor: grab; }
+  .grip-btn:hover { background: #f1f1f1; }
+  .grip-btn svg { width: 9px; height: 14px; fill: currentColor; }
+  /* where it'll land, shown on the lifted item */
+  .drag-pos { position: absolute; top: -10px; right: -10px; min-width: 30px; height: 30px; padding: 0 9px; border-radius: 300px; background: #000; color: #fff; font: 700 13px/30px var(--body); font-variant-numeric: tabular-nums; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,.25); transform: rotate(.6deg); }
+  .compact-title { cursor: grab; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  /* compact: one slim row each — picture, name, position, pin, grip (grip sits under the thumb, easy to reach) */
+  .list.compact .item { grid-template-columns: 64px minmax(0, 1fr) auto 36px; gap: 10px; padding: 6px 6px 6px 8px; }
+  .list.compact .item .thumb { width: 64px; border-radius: 8px; }
+  .list.compact .item .handle { display: grid; order: 5; width: 36px; height: 40px; border-radius: 10px; color: var(--ink); }
+  .list.compact .item .handle:hover { background: #f1f1f1; }
+  .list.compact .actions > .pin-btn { display: grid; }
+  .list.compact .actions { gap: 6px; }
+  .list.compact .compact-title { font-size: 14px; }
+  .list.compact .pin-tag { display: none; }
+  .logo-grid.compact .logo-actions > .pin-btn { display: grid; }
+  .logo-grid.compact .logo-actions { justify-content: space-between; }
+  .logo-grid.compact .pin-tag { display: none; }
   @media (max-width: 640px) {
-    .list.compact .item { grid-template-columns: 64px minmax(0, 1fr) auto; }
-    .list.compact .item .thumb { width: 64px; }
+    .list.compact .item { grid-template-columns: 50px minmax(0, 1fr) auto 30px; gap: 8px; padding: 6px 4px 6px 6px; }
+    .list.compact .item .thumb { width: 50px; border-radius: 7px; }
+    .list.compact .item .handle { width: 30px; }
+    .list.compact .compact-title { font-size: 13px; line-height: 1.25; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+    .list.compact .compact-title small { display: none; }
+    .list.compact .actions { gap: 4px; }
+    .list.compact .icon-btn, .list.compact .pos { height: 32px; }
+    .list.compact .icon-btn { width: 32px; }
+    .list.compact .pos { padding: 0 18px 0 8px; background-position: right 6px center; }
     .logo-grid.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .logo-grid.compact .pos { min-width: 0; padding: 0 16px 0 8px; background-position: right 6px center; }
+    .logo-grid.compact .icon-btn { width: 30px; height: 30px; }
+    .logo-grid.compact .pos { height: 30px; }
   }
 </style>
 </head>
@@ -420,7 +457,7 @@
     </div>
     <div class="panel">
       <div class="panel-head"><h2>Your videos</h2><div class="list-tools" data-kind="videos"></div></div>
-      <p class="hint list-hint">Drag the picture to reorder (hold on phones), or pick a position number.</p>
+      <p class="hint list-hint">Drag the grip to reorder (or hold the picture on phones), or pick a position number. Pinned videos stay put when you Auto-sort.</p>
       <div class="list" id="videoList"></div>
       <details class="more" style="margin-top:20px">
         <summary>Look &amp; feel</summary>
@@ -452,7 +489,7 @@
     </div>
     <div class="panel">
       <div class="panel-head"><h2>Your clients</h2><div class="list-tools" data-kind="logos"></div></div>
-      <p class="hint list-hint">Drag a logo to reorder (hold on phones), or pick a position number.</p>
+      <p class="hint list-hint">Drag the grip to reorder (or hold the logo on phones), or pick a position number. Pinned logos stay put when you Auto-sort.</p>
       <div class="logo-grid" id="logoList"></div>
       <details class="more" style="margin-top:20px">
         <summary>Look &amp; feel</summary>
@@ -654,12 +691,13 @@
 
   function clean(kind, source) {
     var d = JSON.parse(JSON.stringify(source || state[kind]));
-    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; if (l.hidden) o.hidden = true; if (l.wiki) o.wiki = l.wiki; ["ink", "cy", "el", "er", "t"].forEach(function (k) { if (l[k] != null) o[k] = l[k]; }); return o; });
+    if (kind === "logos") d.logos = d.logos.map(function (l) { var o = { name: l.name || "", src: l.src }; if (l.link) o.link = l.link; if (l.hidden) o.hidden = true; if (l.pin) o.pin = true; if (l.wiki) o.wiki = l.wiki; ["ink", "cy", "el", "er", "t"].forEach(function (k) { if (l[k] != null) o[k] = l[k]; }); return o; });
     if (kind === "videos") d.videos = d.videos.map(function (v) {
       var o = { video: v.video, title: v.title || "", meta: v.meta || "" };
       if (v.link) { o.link = v.link; if (v.linkText) o.linkText = v.linkText; }
       if (v.thumbnail) o.thumbnail = v.thumbnail;
       if (v.hidden) o.hidden = true;
+      if (v.pin) o.pin = true;
       if (v.coverPos) o.coverPos = v.coverPos;
       if (v.coverZoom) o.coverZoom = v.coverZoom;
       if (v.wiki) o.wiki = v.wiki;
@@ -699,6 +737,7 @@
     eyeOff: '<svg viewBox="0 0 24 24"><path d="M4 4l16 16M9.9 5.8A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 3.9M6.1 7.9C3.8 9.6 2.5 12 2.5 12S6 18.5 12 18.5c1.5 0 2.9-.4 4.1-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
     ig: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>',
     play: '<svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="4.5"/><path d="M10 9.2v5.6l4.8-2.8z" fill="currentColor" stroke-linejoin="round"/></svg>',
+    pin: '<svg viewBox="0 0 24 24"><path d="M9 3.5h6M10 3.5v5.2L6.5 13h11L14 8.7V3.5M12 13v7.5"/></svg>',
     grip: '<svg viewBox="0 0 10 16"><circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg>'
   };
   function b64encodeText(str) {
@@ -1136,9 +1175,10 @@
 
   /* ---------------- drag to reorder ----------------
      Pointer-based (works with mouse, trackpad and touch). Mouse: grab and move. Touch:
-     press and hold briefly, then drag — so normal scrolling still works. The item lifts and
-     follows the pointer while the others slide out of its way. */
-  function sortable(container, itemSel, handleSel, getArr, rerender, grid) {
+     press and hold briefly, then drag — so normal scrolling still works — or grab the grip
+     (.handle / .grip-btn), which lifts straight away. The item lifts and follows the pointer
+     while the others slide out of its way; a badge on it shows the position it'll land in. */
+  function sortable(container, itemSel, handleSel, getArr, rerender, grid, kind) {
     var s = null; // active drag session
 
     function items() { return $$(itemSel, container); }
@@ -1162,12 +1202,25 @@
       ghost.style.height = r.height + "px";
       ghost.style.left = r.left + "px";
       ghost.style.top = r.top + "px";
-      document.body.appendChild(ghost);
+      s.badge = document.createElement("span"); // (el is the item here, not the helper)
+      s.badge.className = "drag-pos";
+      ghost.appendChild(s.badge);
+      // carry the list's classes (e.g. compact) so the lifted copy looks like the item it came from
+      s.layer = document.createElement("div");
+      s.layer.className = container.className + " drag-layer";
+      s.layer.appendChild(ghost);
+      document.body.appendChild(s.layer);
       s.ghost = ghost;
+      showPos();
       el.classList.add("drag-placeholder");
       document.body.classList.add("sorting");
       if (s.touch && navigator.vibrate) try { navigator.vibrate(8); } catch (x) {}
       try { s.handle.setPointerCapture(s.id); } catch (x) {}
+    }
+    function showPos() {
+      var i = items().indexOf(s.el), sel = s.ghost.querySelector(".pos");
+      s.badge.textContent = "#" + (i + 1);
+      if (sel) sel.value = String(i);
     }
     function place(x, y) {
       s.ghost.style.left = (x - s.offX) + "px";
@@ -1186,6 +1239,7 @@
       var ref = after ? target.nextSibling : target;
       if (ref === s.el || s.el.nextSibling === ref) return; // already there
       flip(function () { container.insertBefore(s.el, ref); });
+      showPos();
     }
     function autoScroll() {
       if (!s || !s.active) return;
@@ -1214,8 +1268,8 @@
       function complete() {
         if (done) return;
         done = true;
-        sess.ghost.remove();
-        if (commit && to > -1 && to !== from) { move(getArr(), from, to); rerender(to); changed(); }
+        sess.layer.remove();
+        if (commit && to > -1 && to !== from) manualMove(kind, getArr(), from, to, rerender);
         else { sess.el.classList.remove("drag-placeholder"); rerender(); }
       }
       anim.onfinish = complete;
@@ -1227,7 +1281,8 @@
       if (!el || !container.contains(el) || e.button !== 0 || s) return;
       if (e.target.closest("button, input, a, select, textarea")) return;
       s = { el: el, handle: handle, id: e.pointerId, from: items().indexOf(el), x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, touch: e.pointerType !== "mouse", active: false };
-      if (s.touch) {
+      if (s.touch && e.target.closest(".handle, .grip-btn")) { begin(); autoScroll(); } // the grip doesn't scroll the page, so no need to hold
+      else if (s.touch) {
         el.classList.add("press");
         s.timer = setTimeout(function () { if (s && !s.active) { el.classList.remove("press"); begin(); autoScroll(); } }, 260);
       }
@@ -1259,16 +1314,50 @@
      it doesn't swing with the news). Videos also count their YouTube views (via the Return
      YouTube Dislike API) and sit Instagram (softer covers) slightly lower. The same brand or
      artist is never placed twice in a row. Items can carry a "wiki" hint — Wikipedia article
-     title(s), "A|B" — for names that are ambiguous ("Ram" → "Ram Trucks"). Hidden items go last. */
+     title(s), "A|B" — for names that are ambiguous ("Ram" → "Ram Trucks"). A video title that
+     names one of the clients in the logo list ("…Wendy's Parking Lot") counts that client too.
+     Hidden items go last. Pinned items ("pin") keep their spot; the rest are sorted around them.
+     With Keep sorted on, anything moved by hand is pinned where it's dropped, then the rest
+     re-sorts — so the list stays ranked without undoing your choices. */
   var compact = { videos: lsGet("ssw-compact-videos") === "1", logos: lsGet("ssw-compact-logos") === "1" };
-  var sorting = {}, sortUndo = {}, undoTimer = {};
-  function posPicker(arr, i, rerender) {
+  var sorting = {}, sortAgain = {}, sortUndo = {}, undoTimer = {};
+  function posPicker(kind, arr, i, rerender) {
     var sel = el("select", { class: "pos", "aria-label": "Position", title: "Move to position…" });
     for (var k = 0; k < arr.length; k++) sel.appendChild(el("option", { value: String(k), text: "#" + (k + 1) }));
     sel.value = String(i);
-    sel.addEventListener("change", function () { var to = +sel.value; move(arr, i, to); rerender(to); changed(); });
+    sel.addEventListener("change", function () { manualMove(kind, arr, i, +sel.value, rerender); });
     return sel;
   }
+  // every hand-made move goes through here (drag, position number, arrows)
+  function manualMove(kind, arr, from, to, rerender) {
+    if (to < 0 || to >= arr.length || to === from) return;
+    var item = arr[from];
+    move(arr, from, to);
+    if (state[kind].settings.keepSorted && !item.pin) {
+      item.pin = true;
+      toast("Pinned at #" + (to + 1) + " — Keep sorted will leave it there.");
+    }
+    rerender(to);
+    changed();
+    resort(kind);
+  }
+  function pinButton(kind, entry, rerender, i) {
+    return el("button", {
+      class: "icon-btn pin-btn" + (entry.pin ? " on" : ""), type: "button",
+      title: entry.pin ? "Pinned at #" + (i + 1) + " — tap to let Auto-sort move it" : "Pin here — Auto-sort won't move it",
+      "aria-label": entry.pin ? "Unpin" : "Pin in place", "aria-pressed": String(!!entry.pin),
+      html: ICON.pin,
+      onclick: function () {
+        if (entry.pin) delete entry.pin; else entry.pin = true;
+        rerender(i);
+        changed();
+        if (!entry.pin) resort(kind);
+        toast(entry.pin ? "Pinned at #" + (i + 1) + " — Auto-sort sorts everything else around it." : "Unpinned — Auto-sort can move it again.");
+      }
+    });
+  }
+  // quiet re-sort when Keep sorted is on
+  function resort(kind) { if (state[kind] && state[kind].settings.keepSorted) autoSort(kind, true); }
   function applyCompact(kind) { $(kind === "videos" ? "#videoList" : "#logoList").classList.toggle("compact", !!compact[kind]); }
   function renderTools(kind) {
     var box = $('.list-tools[data-kind="' + kind + '"]');
@@ -1285,8 +1374,15 @@
       onclick: function () { if (sortUndo[kind]) undoSort(kind); else autoSort(kind); } }, [
       el("span", { text: sorting[kind] ? "Sorting…" : sortUndo[kind] ? "Undo sort" : "Auto-sort" })
     ]));
-    var s = state[kind].settings;
-    box.appendChild(el("label", { class: "keep-sorted", title: "New additions are placed by popularity instead of at the top" }, [
+    var s = state[kind].settings, pins = state[kind][kind].filter(function (x) { return x.pin; }).length;
+    if (pins) box.appendChild(el("button", { class: "btn", type: "button", title: "Let Auto-sort move everything again", onclick: function () {
+      state[kind][kind].forEach(function (x) { delete x.pin; });
+      (kind === "videos" ? renderVideoList : renderLogoList)();
+      changed();
+      resort(kind);
+      toast("Unpinned all — Auto-sort can move everything again.");
+    } }, [el("span", { text: "Unpin " + (pins === 1 ? "1" : "all " + pins) })]));
+    box.appendChild(el("label", { class: "keep-sorted", title: "New additions are placed by popularity, and anything you move by hand is pinned where you drop it" }, [
       el("span", { text: "Keep sorted" }),
       el("span", { class: "switch" }, [
         el("input", { type: "checkbox", checked: s.keepSorted ? "" : null, onchange: function (e) {
@@ -1300,15 +1396,18 @@
   }
   function autoSort(kind, quiet) {
     var arr = state[kind][kind];
-    if (arr.length < 2 || sorting[kind]) return;
+    if (arr.length < 2) return;
+    if (sorting[kind]) { sortAgain[kind] = true; return; } // something changed mid-ranking — go again after
     sorting[kind] = true;
     renderTools(kind);
     if (!quiet) toast("Ranking by popularity…");
-    rankItems(kind, arr.slice()).then(function (ranked) {
+    rankItems(kind, arr.filter(function (x) { return !x.pin; })).then(function (ranked) {
       var before = arr.slice();
-      // anything added while ranking stays at the top
-      var added = arr.filter(function (x) { return ranked.indexOf(x) < 0; });
-      arr.splice.apply(arr, [0, arr.length].concat(added, ranked.filter(function (x) { return arr.indexOf(x) > -1; })));
+      // pinned items keep their spot; anything added while ranking goes first, then the ranking
+      var free = arr.filter(function (x) { return !x.pin && ranked.indexOf(x) < 0; })
+        .concat(ranked.filter(function (x) { return !x.pin && arr.indexOf(x) > -1; }));
+      var next = arr.map(function (x) { return x.pin ? x : free.shift(); });
+      arr.splice.apply(arr, [0, arr.length].concat(next));
       var same = before.every(function (x, i) { return x === arr[i]; });
       if (!quiet && !same) {
         sortUndo[kind] = before;
@@ -1323,6 +1422,7 @@
     }).then(function () {
       sorting[kind] = false;
       renderTools(kind);
+      if (sortAgain[kind]) { sortAgain[kind] = false; autoSort(kind, true); }
     });
   }
   function undoSort(kind) {
@@ -1441,10 +1541,25 @@
       }).catch(function () {});
     })).then(function () { return out; });
   }
+  function wikiHint(it) { return String(it.wiki || "").split("|").map(function (t) { return t.trim(); }).filter(Boolean); }
+  // clients from the logo list named in a video title → their Wikipedia titles (or names)
+  function clientsIn(title) {
+    var t = " " + String(title || "").toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9']+/g, " ") + " ", out = { titles: [], names: [] };
+    ((state.logos && state.logos.logos) || []).forEach(function (l) {
+      var n = String(l.name || "").toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9']+/g, " ").trim();
+      if (n.length < 3 || t.indexOf(" " + n + " ") < 0) return;
+      var hint = wikiHint(l);
+      if (hint.length) out.titles = out.titles.concat(hint); else out.names.push(l.name);
+    });
+    return out;
+  }
   function rankItems(kind, arr) {
     var need = arr.map(function (it) {
-      var hint = String(it.wiki || "").split("|").map(function (t) { return t.trim(); }).filter(Boolean);
-      return hint.length ? { titles: hint, names: [] } : { titles: [], names: kind === "logos" ? [it.name || ""] : videoNames(it.title) };
+      var hint = wikiHint(it);
+      if (hint.length) return { titles: hint, names: [] };
+      if (kind === "logos") return { titles: [], names: [it.name || ""] };
+      var c = clientsIn(it.title);
+      return { titles: uniq(c.titles), names: uniq(videoNames(it.title).concat(c.names)) };
     });
     var names = uniq([].concat.apply([], need.map(function (n) { return n.names; })));
     var titles = uniq([].concat.apply([], need.map(function (n) { return n.titles; })));
@@ -1545,9 +1660,10 @@
         el("div", { class: "src-line" }, [el("a", { href: v.video, target: "_blank", rel: "noopener", text: v.video })])
       ]);
       var actions = el("div", { class: "actions" }, [
-        posPicker(vids, i, renderVideoList),
-        el("button", { class: "icon-btn", type: "button", title: "Move up", "aria-label": "Move up", html: ICON.up, disabled: i === 0 ? "" : null, onclick: function () { move(vids, i, i - 1); renderVideoList(i - 1); changed(); } }),
-        el("button", { class: "icon-btn", type: "button", title: "Move down", "aria-label": "Move down", html: ICON.down, disabled: i === vids.length - 1 ? "" : null, onclick: function () { move(vids, i, i + 1); renderVideoList(i + 1); changed(); } }),
+        posPicker("videos", vids, i, renderVideoList),
+        el("button", { class: "icon-btn", type: "button", title: "Move up", "aria-label": "Move up", html: ICON.up, disabled: i === 0 ? "" : null, onclick: function () { manualMove("videos", vids, i, i - 1, renderVideoList); } }),
+        el("button", { class: "icon-btn", type: "button", title: "Move down", "aria-label": "Move down", html: ICON.down, disabled: i === vids.length - 1 ? "" : null, onclick: function () { manualMove("videos", vids, i, i + 1, renderVideoList); } }),
+        pinButton("videos", v, renderVideoList, i),
         hideButton(v, "video", renderVideoList, i),
         el("button", { class: "icon-btn danger", type: "button", title: "Remove", "aria-label": "Remove video", html: ICON.x, onclick: function () {
           if (!confirm("Remove “" + (v.title || "this video") + "”?")) return;
@@ -1556,9 +1672,11 @@
       ]);
       var handle = el("div", { class: "handle", html: ICON.grip, title: "Drag to reorder" });
       if (v.hidden) thumb.appendChild(el("span", { class: "hidden-tag", text: "Hidden" }));
-      var item = el("div", { class: "item" + (i === flashIndex ? " flash" : "") + (v.hidden ? " is-hidden" : ""), "data-i": i }, [handle, thumb, fields, actions]);
+      if (v.pin) thumb.appendChild(el("span", { class: "pin-tag", html: ICON.pin, title: "Pinned" }));
+      var item = el("div", { class: "item" + (i === flashIndex ? " flash" : "") + (v.hidden ? " is-hidden" : "") + (v.pin ? " is-pinned" : ""), "data-i": i }, [handle, thumb, fields, actions]);
       list.appendChild(item);
     });
+    renderTools("videos");
   }
 
   // cover picture: required-ish for Instagram, optional for everything else
@@ -1752,6 +1870,7 @@
         if (entry.hidden) delete entry.hidden; else entry.hidden = true;
         rerender(i);
         changed();
+        resort(label + "s"); // hidden ones sit at the end
         toast(entry.hidden ? "Hidden — it stays here but won't show on your site after you Publish." : "Visible again — Publish to show it on your site.");
       }
     });
@@ -1767,18 +1886,23 @@
       var imgBox = el("div", { class: "logo-img checker", title: "Drag to reorder" }, [
         el("img", { src: l.preview || resolveSrc(l.src), alt: "" }),
         l.pending ? el("span", { class: "new", text: "New" }) : null,
-        l.hidden ? el("span", { class: "hidden-tag", text: "Hidden" }) : null
+        l.hidden ? el("span", { class: "hidden-tag", text: "Hidden" }) : null,
+        l.pin ? el("span", { class: "pin-tag", html: ICON.pin, title: "Pinned" }) : null
       ]);
-      var card = el("div", { class: "logo-card" + (i === flashIndex ? " flash" : "") + (l.hidden ? " is-hidden" : ""), "data-i": i }, [
+      var card = el("div", { class: "logo-card" + (i === flashIndex ? " flash" : "") + (l.hidden ? " is-hidden" : "") + (l.pin ? " is-pinned" : ""), "data-i": i }, [
         imgBox,
-        el("div", { class: "compact-title", text: l.name || "Client" }),
+        el("div", { class: "compact-title" }, [
+          el("span", { text: l.name || "Client" }),
+          el("span", { class: "grip-btn", html: ICON.grip, title: "Drag to reorder", "aria-hidden": "true" })
+        ]),
         backgroundControl(l, i, imgBox),
         el("input", { class: "input", type: "text", value: l.name || "", placeholder: "Client name", "aria-label": "Client name", oninput: function (e) { l.name = e.target.value; changed(); } }),
         el("input", { class: "input", type: "url", inputmode: "url", value: l.link || "", placeholder: "Optional link", "aria-label": "Optional link", oninput: function (e) { l.link = e.target.value; changed(); } }),
         el("div", { class: "logo-actions" }, [
-          posPicker(logos, i, renderLogoList),
-          el("button", { class: "icon-btn", type: "button", title: "Move earlier", "aria-label": "Move earlier", html: ICON.left, disabled: i === 0 ? "" : null, onclick: function () { move(logos, i, i - 1); renderLogoList(i - 1); changed(); } }),
-          el("button", { class: "icon-btn", type: "button", title: "Move later", "aria-label": "Move later", html: ICON.right, disabled: i === logos.length - 1 ? "" : null, onclick: function () { move(logos, i, i + 1); renderLogoList(i + 1); changed(); } }),
+          posPicker("logos", logos, i, renderLogoList),
+          el("button", { class: "icon-btn", type: "button", title: "Move earlier", "aria-label": "Move earlier", html: ICON.left, disabled: i === 0 ? "" : null, onclick: function () { manualMove("logos", logos, i, i - 1, renderLogoList); } }),
+          el("button", { class: "icon-btn", type: "button", title: "Move later", "aria-label": "Move later", html: ICON.right, disabled: i === logos.length - 1 ? "" : null, onclick: function () { manualMove("logos", logos, i, i + 1, renderLogoList); } }),
+          pinButton("logos", l, renderLogoList, i),
           hideButton(l, "logo", renderLogoList, i),
           el("button", { class: "icon-btn danger", type: "button", title: "Remove", "aria-label": "Remove logo", html: ICON.x, onclick: function () {
             if (!confirm("Remove " + (l.name || "this logo") + "?")) return;
@@ -1788,6 +1912,7 @@
       ]);
       list.appendChild(card);
     });
+    renderTools("logos");
   }
 
   function readAsDataURL(blob) {
@@ -2701,8 +2826,8 @@
   });
 
   /* ---------------- start ---------------- */
-  sortable($("#videoList"), ".item", ".handle, .thumb", function () { return state.videos.videos; }, renderVideoList, false);
-  sortable($("#logoList"), ".logo-card", ".logo-img", function () { return state.logos.logos; }, renderLogoList, true);
+  sortable($("#videoList"), ".item", ".handle, .thumb, .compact-title", function () { return state.videos.videos; }, renderVideoList, false, "videos");
+  sortable($("#logoList"), ".logo-card", ".logo-img, .compact-title", function () { return state.logos.logos; }, renderLogoList, true, "logos");
 
   loadLock().then(function () {
     document.body.classList.remove("booting");
