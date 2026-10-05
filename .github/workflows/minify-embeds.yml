@@ -1,0 +1,40 @@
+name: Minify embeds
+
+# When embed/videos.js or embed/logos.js is edited, rebuild the .min.js copies the
+# Squarespace code blocks load. See scripts/minify.mjs.
+on:
+  push:
+    branches: [main]
+    paths: [embed/videos.js, embed/logos.js, scripts/minify.mjs]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: minify-embeds
+  cancel-in-progress: false
+
+jobs:
+  minify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Minify
+        run: |
+          npm install --no-save --no-package-lock --silent terser@5.51.2
+          node scripts/minify.mjs
+      - name: Save
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add embed/*.min.js
+          if git diff --cached --quiet; then echo "Already up to date."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Minify embeds"
+          git pull --rebase origin main
+          git push
+          # pushes made by Actions don't redeploy the site on their own
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || true

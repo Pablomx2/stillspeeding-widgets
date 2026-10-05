@@ -1,7 +1,7 @@
 /* Still Speeding — video carousel widget
    Usage on the site:
      <div class="ss-videos"></div>
-     <script src="https://<user>.github.io/stillspeeding-widgets/embed/videos.js"></script>
+     <script src="https://<user>.github.io/stillspeeding-widgets/embed/videos.min.js" defer></script>
    Optional per-block overrides: data-theme="dark", data-per-view="2", data-loop="false"
    Content comes from data/videos.json (edited with the admin app). A copy of it is baked into
    this file (INLINE below, refreshed by the Video covers workflow after each publish) so the
@@ -10,6 +10,8 @@
   var script = document.currentScript;
   var BASE = script ? script.src.replace(/embed\/[^\/?#]*([?#].*)?$/, "") : "";
   var W = (window.SSWidgets = window.SSWidgets || {});
+  // links from the data are only used if they're ordinary web links (never "javascript:" etc.)
+  function webUrl(u) { u = String(u || "").trim(); return /^https?:\/\//i.test(u) ? u : ""; }
   // copy of data/videos.json, written by scripts/inline-videos.mjs (keep the markers)
   var INLINE = /*INLINE-DATA*/{"settings":{"theme":"light","perViewDesktop":3,"softThumbnails":false,"openLinksInNewTab":true,"edgeToEdge":true,"loop":true,"playIn":"popup"},"videos":[{"video":"https://www.youtube.com/watch?v=o8U3vvXWt1o","title":"Songs to Listen to in a Wendy's Parking Lot","meta":"Commercial","thumbnail":"covers/yt-o8U3vvXWt1o.jpg"},{"video":"https://www.youtube.com/watch?v=3sB4Iv_tM7U","title":"ADELA - Nicole Kidman","meta":"Music Video","thumbnail":"covers/yt-3sB4Iv_tM7U.jpg","wiki":"Nicole Kidman"},{"video":"https://www.instagram.com/p/DdCELxiBsVE/","title":"Google x First Times with Mika Abdalla","meta":"Commercial","thumbnail":"covers/ig-DdCELxiBsVE.jpg","wiki":"Google|Mika Abdalla"},{"video":"https://www.youtube.com/watch?v=-gm2ncZDJPU","title":"WWE 2K25: Netflix Edition","meta":"Commercial","thumbnail":"covers/yt--gm2ncZDJPU.jpg","wiki":"WWE|Netflix"},{"video":"https://www.youtube.com/watch?v=NLDida6fglw","title":"Project Hail Mary","meta":"Youtube Content","thumbnail":"covers/yt-NLDida6fglw.jpg","wiki":"Project Hail Mary (film)"},{"video":"https://www.youtube.com/watch?v=siL-RoC8haQ","title":"LISA - FUTW (Vixi Solo Version)","meta":"Behind the scenes","thumbnail":"covers/yt-siL-RoC8haQ.jpg","wiki":"Lisa (rapper)"},{"video":"https://www.youtube.com/watch?v=qTm4W_VRs3Q","title":"Kendrick and SZA GNX Tour Skit","meta":"Tour Assets","thumbnail":"covers/yt-qTm4W_VRs3Q.jpg","wiki":"Kendrick Lamar|SZA"},{"video":"https://www.youtube.com/watch?v=I-rOF9se14w","title":"LISA - When I'm With You","meta":"Behind the scenes","thumbnail":"covers/yt-I-rOF9se14w.jpg","wiki":"Lisa (rapper)"},{"video":"https://www.youtube.com/watch?v=jkWDNE8Tjtc","title":"Meghan Trainor - Still Don't Care","meta":"Music Video","thumbnail":"covers/yt-jkWDNE8Tjtc.jpg","wiki":"Meghan Trainor"},{"video":"https://www.instagram.com/p/DcjEbZhuqd7/","title":"Waymo x Martha Stewart","meta":"Commercial","thumbnail":"covers/ig-DcjEbZhuqd7.jpg","coverPos":"50.0% 26.5%","wiki":"Waymo|Martha Stewart"},{"video":"https://www.youtube.com/watch?v=gE-rcACBTZU","title":"Calle 24, Fuerza Regida - Noche Perfecta","meta":"Music Video","thumbnail":"covers/yt-gE-rcACBTZU.jpg","wiki":"Fuerza Regida"},{"video":"https://www.instagram.com/p/DdWq3eqDps5/","title":"Audible - En Otras Palabras","meta":"Latino Heritage Month Campaign","thumbnail":"covers/ig-DdWq3eqDps5.jpg","coverPos":"50.0% 31.1%","wiki":"Audible (service)"},{"video":"https://www.youtube.com/watch?v=p4bqpSJwguw","title":"Revolve - My Current Rotation","meta":"Youtube Content","thumbnail":"covers/yt-p4bqpSJwguw.jpg"},{"video":"https://www.instagram.com/p/Ddjph23J89j/","title":"Audible - En Otras Palabras 2","meta":"Latino Heritage Month Campaign","thumbnail":"covers/ig-Ddjph23J89j.jpg","hidden":true,"coverPos":"50.0% 33.1%","wiki":"Audible (service)"}]}/*END-INLINE-DATA*/;
 
@@ -226,8 +228,8 @@
     } else {
       content = makePlayer(item, info);
       var site = info.type === "youtube" ? "YouTube" : info.type === "vimeo" ? "Vimeo" : "";
-      link.href = site ? item.video : "";
-      link.textContent = site ? "Watch on " + site + " ↗" : "";
+      link.href = site ? webUrl(item.video) : "";
+      link.textContent = link.getAttribute("href") ? "Watch on " + site + " ↗" : "";
     }
     link.hidden = !link.textContent;
     modalFrame.innerHTML = "";
@@ -387,9 +389,9 @@
         if (item.meta || item.link) {
           var meta = el("div", "ssv-meta");
           meta.appendChild(el("span", "ssv-meta-text", item.meta || ""));
-          if (item.link) {
+          if (webUrl(item.link)) {
             var a = el("a", "ssv-link", item.linkText || "View");
-            a.href = item.link;
+            a.href = webUrl(item.link);
             if (settings.openLinksInNewTab) { a.target = "_blank"; a.rel = "noopener"; }
             meta.appendChild(a);
           }

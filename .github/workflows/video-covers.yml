@@ -25,8 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # pinned on purpose (this job can write to the repo) — bump the version when covers break
       - name: Install yt-dlp
-        run: python3 -m pip install --quiet --upgrade yt-dlp
+        run: python3 -m pip install --quiet "yt-dlp==2026.8.19"
       - name: Fetch missing covers
         run: node scripts/video-covers.mjs
         env:
@@ -41,7 +42,10 @@ jobs:
       # (runs even if a cover couldn't be fetched, so the list never goes stale)
       - name: Inline video list
         if: ${{ !cancelled() && !inputs.test_url }}
-        run: node scripts/inline-videos.mjs
+        run: |
+          node scripts/inline-videos.mjs
+          npm install --no-save --no-package-lock --silent terser@5.51.2
+          node scripts/minify.mjs
       - name: Save covers
         if: ${{ !cancelled() && !inputs.test_url }}
         env:
@@ -53,7 +57,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A covers data/videos.json embed/videos.js
+          git add -A covers data/videos.json embed/videos.js embed/videos.min.js
           git commit -m "Add video covers / inline video list"
           git pull --rebase origin main
           git push

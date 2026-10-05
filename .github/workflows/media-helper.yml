@@ -25,9 +25,10 @@ jobs:
     steps:
       # the runner already has Node; yt-dlp is only needed for video copies (frame picker)
       - uses: actions/checkout@v4
+      # pinned on purpose (this job can write to the repo) — bump the version when downloads break
       - name: Install yt-dlp
         run: |
-          if grep -qs '"kind": *"video"' requests/*.json; then python3 -m pip install --quiet --upgrade yt-dlp; fi
+          if grep -qs '"kind": *"video"' requests/*.json; then python3 -m pip install --quiet "yt-dlp==2026.8.19"; fi
       - name: Load recent results
         run: |
           if git ls-remote --exit-code --heads origin media-cache >/dev/null; then

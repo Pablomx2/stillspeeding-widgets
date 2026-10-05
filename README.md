@@ -4,18 +4,19 @@ Video carousel + clients logo banner for stillspeeding.net (Squarespace).
 
 - **Admin app:** https://pablomx2.github.io/stillspeeding-widgets/ — edit videos & logos, preview, press **Publish**.
 - **Content:** `data/videos.json`, `data/logos.json`, uploaded images in `logos/`.
-- **Embeds:** `embed/videos.js`, `embed/logos.js` (loaded by the Squarespace code blocks).
+- **Embeds:** `embed/videos.js`, `embed/logos.js` — edit these. The Squarespace code blocks load the
+  minified copies `embed/*.min.js`, rebuilt automatically by the Minify embeds workflow (`scripts/minify.mjs`).
 
 ## Squarespace code blocks (paste once)
 
 ```html
 <div class="ss-videos"></div>
-<script src="https://pablomx2.github.io/stillspeeding-widgets/embed/videos.js"></script>
+<script src="https://pablomx2.github.io/stillspeeding-widgets/embed/videos.min.js" defer></script>
 ```
 
 ```html
 <div class="ss-logos" data-theme="light"></div>
-<script src="https://pablomx2.github.io/stillspeeding-widgets/embed/logos.js"></script>
+<script src="https://pablomx2.github.io/stillspeeding-widgets/embed/logos.min.js" defer></script>
 ```
 
 Per-block options: `data-theme="dark"` (black sections), `data-style="mono"` (logos only),

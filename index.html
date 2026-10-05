@@ -520,6 +520,7 @@
     <div class="panel">
       <h2 style="margin-bottom:6px">Put it on your site</h2>
       <p class="hint" style="margin-bottom:18px">You only do this once. After that, just edit here and press Publish.</p>
+      <p class="hint" style="margin-bottom:18px"><b>Already installed?</b> The code was updated in October 2026 so the page loads faster — open each of your two code blocks and replace what's there with the new code below. The old code keeps working until you do.</p>
       <ol class="steps">
         <li><div>In Squarespace, open the page and click <b>Edit</b>.</div></li>
         <li><div>Click <b>+ Add Block</b> (or the <span class="kbd">+</span> in a section) and choose <b>Code</b>.</div></li>
@@ -2617,8 +2618,8 @@
   /* ---------------- install tab ---------------- */
   function renderInstall() {
     var base = siteBase();
-    $("#codeVideos").textContent = '<div class="ss-videos"></div>\n<script src="' + base + 'embed/videos.js"><\/script>';
-    $("#codeLogos").textContent = '<div class="ss-logos" data-theme="light"></div>\n<script src="' + base + 'embed/logos.js"><\/script>';
+    $("#codeVideos").textContent = '<div class="ss-videos"></div>\n<script src="' + base + 'embed/videos.min.js" defer><\/script>';
+    $("#codeLogos").textContent = '<div class="ss-logos" data-theme="light"></div>\n<script src="' + base + 'embed/logos.min.js" defer><\/script>';
     $("#connInfo").textContent = cfg.token
       ? "Connected to github.com/" + cfg.owner + "/" + cfg.repo + " on this device."
       : "Not connected on this device — you can look around, but Publish needs a connection.";

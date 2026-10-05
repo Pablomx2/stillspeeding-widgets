@@ -1,7 +1,7 @@
 /* Still Speeding — clients logo banner widget
    Usage on the site:
      <div class="ss-logos"></div>
-     <script src="https://<user>.github.io/stillspeeding-widgets/embed/logos.js"></script>
+     <script src="https://<user>.github.io/stillspeeding-widgets/embed/logos.min.js" defer></script>
    Optional per-block overrides: data-theme="dark", data-style="mono", data-heading="Clients",
    data-animation="glide | step | fade | still"
    Content comes from data/logos.json (edited with the admin app). */
@@ -9,6 +9,8 @@
   var script = document.currentScript;
   var BASE = script ? script.src.replace(/embed\/[^\/?#]*([?#].*)?$/, "") : "";
   var W = (window.SSWidgets = window.SSWidgets || {});
+  // links from the data are only used if they're ordinary web links (never "javascript:" etc.)
+  function webUrl(u) { u = String(u || "").trim(); return /^https?:\/\//i.test(u) ? u : ""; }
 
   var CSS = [
     ".ssl-root{position:relative;--ssl-ink:#000;--ssl-paper:#fafafa;--ssl-height:40px;--ssl-max-width:140px;--ssl-gap:80px;--ssl-gray:100%;--ssl-opacity:.55;--ssl-fade:14%;width:100%;color:var(--ssl-ink);-webkit-tap-highlight-color:transparent}",
@@ -150,10 +152,11 @@
     var original = document.createElement("div");
     original.className = "ssl-set";
     logos.forEach(function (logo) {
-      var item = document.createElement(logo.link ? "a" : "div");
+      var href = webUrl(logo.link);
+      var item = document.createElement(href ? "a" : "div");
       item.className = "ssl-item";
-      if (logo.link) {
-        item.href = logo.link;
+      if (href) {
+        item.href = href;
         item.target = "_blank";
         item.rel = "noopener";
         item.setAttribute("aria-label", logo.name || "Client");
