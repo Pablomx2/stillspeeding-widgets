@@ -20,6 +20,15 @@
   },
   "logos": [
     {
+      "name": "Kawasaki",
+      "src": "logos/kawasaki-yac3m.svg",
+      "ink": 0.39,
+      "cy": 0.591,
+      "el": 1.22,
+      "er": 1.09,
+      "t": 1
+    },
+    {
       "name": "Google",
       "src": "logos/google-f3j7b.svg",
       "wiki": "Google",
