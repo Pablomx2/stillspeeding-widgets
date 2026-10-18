@@ -10,6 +10,12 @@
   },
   "videos": [
     {
+      "video": "https://www.youtube.com/watch?v=3_Q8J9cUlug",
+      "title": "Introducing Core | The Personal AI Computer",
+      "meta": "Commercial - Keynote",
+      "thumbnail": "covers/yt-3_Q8J9cUlug.jpg"
+    },
+    {
       "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
       "title": "ADELA - Nicole Kidman",
       "meta": "Music Video",
