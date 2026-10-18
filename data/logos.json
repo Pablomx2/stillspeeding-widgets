@@ -20,6 +20,15 @@
   },
   "logos": [
     {
+      "name": "Playboy",
+      "src": "logos/playboy-dc4nj.svg",
+      "ink": 0.57,
+      "cy": 0.493,
+      "el": 1.14,
+      "er": 1.03,
+      "t": 1
+    },
+    {
       "name": "Kawasaki",
       "src": "logos/kawasaki-yac3m.svg",
       "ink": 0.39,
