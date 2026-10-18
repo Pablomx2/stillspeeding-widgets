@@ -290,7 +290,7 @@
       return loaded(img).then(function () { return tidy(img); });
     })).then(function () { balance(); opticalCentre(); });
 
-    /* Name label: rest the mouse on a logo for a moment (or tap a lit logo again on a phone)
+    /* Name label: rest the mouse on a logo for a moment (or tap it on a phone)
        and its name surfaces in a small pill underneath. It follows the logo while the banner
        settles, and fades away when the mouse moves off or, on touch, after a short while. */
     var tipEl = document.createElement("div"), tipFor = null, tipRaf = 0, tipHideT = 0, tipSwapT = 0;
@@ -359,8 +359,8 @@
 
     /* Tap to colour: phones can't hover, so a tap on a logo does what hovering does on a computer —
        its colour comes up, the banner eases to a stop, and after a moment both drift back.
-       Tapping the lit logo again shows its name for a moment. On a logo with a link, the
-       link opens on the tap after that (while its name is showing). */
+       Its name shows underneath at the same time. On a logo with a link, tapping the lit
+       logo again opens the link. */
     var tapHooks = null, lit = null, litTimer = 0, tapPaused = false, blockClick = false;
     if (S.colorOnHover) {
       var tap = null;
@@ -408,24 +408,19 @@
         var item = e.target.closest && e.target.closest(".ssl-item");
         if (!item || !viewport.contains(item)) { if (lit) release(); return; } // tapped the space between logos
         var again = item === lit && item.classList.contains("is-lit");
-        var named = tipFor === item && tipEl.classList.contains("is-on");
-        blockClick = !!item.href && (!again || (!named && item.hasAttribute("data-name")));
-        if (again && !named) {
-          // a second tap: name it, and keep the colour up a little past the label
-          showTip(item);
-          tipHideT = setTimeout(hideTip, 2600);
-          clearTimeout(litTimer);
-          litTimer = setTimeout(release, 3400);
-          return;
-        }
-        if (lit && lit !== item) { dim(lit); if (tipFor === lit) hideTip(); }
+        blockClick = !!item.href && !again; // a linked logo opens on the second tap
+        if (lit && lit !== item) dim(lit);
         if (!lit) watchPage();
         lit = item;
         item.classList.remove("is-dimming");
         item.classList.add("is-lit");
         if (!tapPaused && !hovered && tapHooks) { tapPaused = true; hovered = true; tapHooks.in(); }
+        // colour and name come up together; the colour stays a little past the label
+        if (item.hasAttribute("data-name")) showTip(item); else hideTip();
+        clearTimeout(tipHideT);
+        tipHideT = setTimeout(hideTip, 2800);
         clearTimeout(litTimer);
-        litTimer = setTimeout(release, 2600);
+        litTimer = setTimeout(release, 3400);
       });
       viewport.addEventListener("click", function (e) {
         if (blockClick) { e.preventDefault(); blockClick = false; }
