@@ -1,0 +1,43 @@
+name: Inline logos
+
+# After the admin app publishes the logo list (or a logo file), bake the list and its SVG
+# logos into embed/logos.js and re-minify, so the banner needs no extra downloads.
+# See scripts/inline-logos.mjs.
+on:
+  push:
+    branches: [main]
+    paths: [data/logos.json, "logos/**", scripts/inline-logos.mjs]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: inline-logos
+  cancel-in-progress: false
+
+jobs:
+  inline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inline logo list
+        run: |
+          git pull --ff-only origin main
+          node scripts/inline-logos.mjs
+          npm install --no-save --no-package-lock --silent terser@5.51.2
+          node scripts/minify.mjs
+      - name: Save
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add embed/logos.js embed/logos.min.js
+          if git diff --cached --quiet; then echo "Already up to date."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Inline logo list"
+          git pull --rebase origin main
+          git push
+          # pushes made by Actions don't redeploy the site on their own
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || true
