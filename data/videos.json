@@ -10,17 +10,17 @@
   },
   "videos": [
     {
-      "video": "https://www.youtube.com/watch?v=3_Q8J9cUlug",
-      "title": "Introducing Core | The Personal AI Computer",
-      "meta": "Commercial - Keynote",
-      "thumbnail": "covers/yt-3_Q8J9cUlug.jpg"
-    },
-    {
       "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
       "title": "ADELA - Nicole Kidman",
       "meta": "Music Video",
       "thumbnail": "covers/yt-3sB4Iv_tM7U.jpg",
       "wiki": "Nicole Kidman"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=sNP9wi4br0M",
+      "title": "Amex Platinum Presents: \"There’s Nothing Like It\" with Olivia Rodrigo",
+      "meta": "",
+      "thumbnail": "covers/yt-sNP9wi4br0M.jpg"
     },
     {
       "video": "https://www.instagram.com/p/DdCELxiBsVE/",
@@ -111,6 +111,12 @@
       "title": "The All-New 2026 Kawasaki Teryx4 H2 / Teryx5 H2",
       "meta": "",
       "thumbnail": "covers/yt-H0Kjo76xuqE.jpg"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=3_Q8J9cUlug",
+      "title": "Introducing Core | The Personal AI Computer",
+      "meta": "Commercial - Keynote",
+      "thumbnail": "covers/yt-3_Q8J9cUlug.jpg"
     },
     {
       "video": "https://www.instagram.com/p/Ddjph23J89j/",
