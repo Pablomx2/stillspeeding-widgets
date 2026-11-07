@@ -19,6 +19,10 @@
     ".ssv-root{--ssv-ink:#000;--ssv-paper:#fafafa;--ssv-muted:rgba(0,0,0,.55);--ssv-line:rgba(0,0,0,.14);--ssv-radius:20px;--ssv-gap:28px;--ssv-per:3;--ssv-head:'Dangrek','Arial Narrow',sans-serif;--ssv-body:'Space Grotesk',system-ui,sans-serif;position:relative;width:100%;color:var(--ssv-ink);font-family:var(--ssv-body);-webkit-tap-highlight-color:transparent}",
     ".ssv-root.ssv-dark{--ssv-ink:#fafafa;--ssv-paper:#000;--ssv-muted:rgba(250,250,250,.6);--ssv-line:rgba(250,250,250,.2)}",
     ".ssv-root *,.ssv-root *::before,.ssv-root *::after{box-sizing:border-box}",
+    /* the carousel keeps its space but stays invisible until the first covers are in, then the
+       pictures and titles fade up together (see revealWhenReady) */
+    ".ssv-root{opacity:0;transform:translateY(14px);transition:opacity 1.1s cubic-bezier(.4,0,.2,1),transform 1.4s cubic-bezier(.2,.7,.2,1)}",
+    ".ssv-root.is-shown{opacity:1;transform:none}",
     "@media (max-width:991px){.ssv-root{--ssv-per:2.15!important;--ssv-gap:20px}}",
     /* phones: one card at a time, centred on the screen, with the neighbouring videos peeking in
        equally on both sides. The side padding is half of the space left over by the card, so every
@@ -91,7 +95,7 @@
     ".ssv-empty{padding:40px 0;text-align:center;color:var(--ssv-muted);font-size:14px}",
     "@media (max-width:640px){.ssv-info{padding:12px 2px 0}.ssv-root .ssv-title{font-size:18px;-webkit-line-clamp:2}.ssv-meta{font-size:12.5px;margin-top:4px}.ssv-controls{margin-top:20px;gap:16px}.ssv-arrows{gap:8px}.ssv-root .ssv-arrow{width:42px;height:42px}.ssv-arrow svg{width:18px;height:18px}.ssv-root .ssv-play{padding:10px}.ssv-pill{height:30px;padding:0 13px 0 10px;gap:7px;font-size:13px}.ssv-pill svg{width:10px;height:10px}}",
     "@media (max-width:360px){.ssv-root .ssv-title{font-size:16px}.ssv-root .ssv-arrow{width:38px;height:38px}}",
-    "@media (prefers-reduced-motion:reduce){.ssv-viewport{scroll-behavior:auto}.ssv-root *,.ssv-root *::before,.ssv-root *::after{transition:none!important}}"
+    "@media (prefers-reduced-motion:reduce){.ssv-root{transform:none;transition:opacity .3s ease}.ssv-viewport{scroll-behavior:auto}.ssv-root *,.ssv-root *::before,.ssv-root *::after{transition:none!important}}"
   ].join("\n");
 
   /* Only download the font weights the page doesn't already have (the Squarespace site
@@ -278,6 +282,39 @@
   }
   var cardSizes = "(max-width:640px) 86vw, (max-width:991px) 45vw, 33vw";
 
+  /* Fade the carousel in only once the first covers and the fonts are ready, so the titles never
+     show up ahead of the pictures. Lazy covers only start loading near the screen, so the time
+     limit (after which it shows regardless) starts counting there. Later redraws of the same
+     block (newer live list, admin preview) show straight away. */
+  var REVEAL_MAX = 1200;
+  function revealWhenReady(root, wrap, imgs) {
+    if (root._ssShown) { wrap.classList.add("is-shown"); return; }
+    var shown = false, io = null;
+    function show() {
+      if (io) io.disconnect();
+      if (shown || !wrap.parentNode) return;
+      shown = true;
+      root._ssShown = true;
+      void getComputedStyle(wrap).opacity; // start from the hidden state so the fade runs
+      wrap.classList.add("is-shown");
+    }
+    var waits = imgs.map(function (img) {
+      return new Promise(function (res) {
+        if (img.complete && img.naturalWidth) return res();
+        img.addEventListener("load", res);
+        img.addEventListener("error", res);
+      });
+    });
+    if (document.fonts && document.fonts.ready) waits.push(document.fonts.ready.catch(function () {}));
+    Promise.all(waits).then(show);
+    if (window.IntersectionObserver) {
+      io = new IntersectionObserver(function (e) {
+        if (e[0].isIntersecting) { io.disconnect(); setTimeout(show, REVEAL_MAX); }
+      }, { rootMargin: "300px 0px" });
+      io.observe(wrap);
+    } else setTimeout(show, REVEAL_MAX);
+  }
+
   W.renderVideos = function (root, data) {
     ensureAssets();
     if (root._ssCleanup) root._ssCleanup();
@@ -303,6 +340,7 @@
 
     if (!videos.length) {
       wrap.appendChild(el("div", "ssv-empty", "No videos yet."));
+      revealWhenReady(root, wrap, []);
       return;
     }
 
@@ -542,6 +580,14 @@
     enableLoop();
     lastStep = step();
     update();
+
+    // wait for the covers of the cards that show first (the ones further along load lazily, later)
+    var vr = viewport.getBoundingClientRect(), firstCovers = [];
+    Array.prototype.forEach.call(track.querySelectorAll(".ssv-media img"), function (img) {
+      var r = img.parentNode.getBoundingClientRect();
+      if (r.right > vr.left + 1 && r.left < vr.right - 1) firstCovers.push(img);
+    });
+    revealWhenReady(root, wrap, firstCovers);
   };
 
   function boot() {

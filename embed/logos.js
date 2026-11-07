@@ -22,6 +22,11 @@
     ".ssl-root{position:relative;--ssl-ink:#000;--ssl-paper:#fafafa;--ssl-height:40px;--ssl-max-width:140px;--ssl-gap:80px;--ssl-gray:100%;--ssl-opacity:.55;--ssl-fade:14%;width:100%;color:var(--ssl-ink);-webkit-tap-highlight-color:transparent}",
     ".ssl-root.ssl-dark{--ssl-ink:#fafafa;--ssl-paper:#0a0a0a}",
     ".ssl-root *,.ssl-root *::before,.ssl-root *::after{box-sizing:border-box}",
+    /* the banner keeps its space but stays invisible until the logos are in and lined up, then the
+       heading and logos fade up together (see reveal below) */
+    ".ssl-root{opacity:0;transform:translateY(10px);transition:opacity 1.1s cubic-bezier(.4,0,.2,1),transform 1.4s cubic-bezier(.2,.7,.2,1)}",
+    ".ssl-root.is-shown{opacity:1;transform:none}",
+    "@media (prefers-reduced-motion:reduce){.ssl-root{transform:none;transition:opacity .3s ease}}",
     ".ssl-heading{display:flex;align-items:center;gap:18px;margin:0 0 30px;font-family:'Dangrek','Arial Narrow',sans-serif;font-size:15px;line-height:1;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}",
     ".ssl-heading::before,.ssl-heading::after{content:'';flex:1;height:1px;background:currentColor;opacity:.18}",
     ".ssl-heading span{transform:translateY(1px)}",
@@ -133,6 +138,20 @@
     wrap.classList.toggle("ssl-no-fade", !S.fadeEdges);
     root.appendChild(wrap);
 
+    /* Show the banner once its logos have loaded and been lined up (and the fonts are in), so the
+       heading never appears on its own and nothing shifts after it shows. Never wait longer than
+       1.2s; later redraws of the same block (newer live list, admin preview) show straight away. */
+    var shown = false;
+    function reveal() {
+      if (shown || !wrap.parentNode) return;
+      shown = true;
+      root._ssShown = true;
+      void getComputedStyle(wrap).opacity; // start from the hidden state so the fade runs
+      wrap.classList.add("is-shown");
+    }
+    if (root._ssShown) wrap.classList.add("is-shown");
+    else setTimeout(reveal, 1200);
+
     if (S.heading) {
       var h = document.createElement("div");
       h.className = "ssl-heading";
@@ -146,6 +165,7 @@
       em.className = "ssl-empty";
       em.textContent = "No logos yet.";
       wrap.appendChild(em);
+      reveal();
       return;
     }
 
@@ -296,6 +316,8 @@
     var imagesSettled = Promise.all(Array.prototype.map.call(original.querySelectorAll("img"), function (img) {
       return loaded(img).then(function () { return tidy(img); });
     })).then(function () { balance(); opticalCentre(); });
+    Promise.all([imagesSettled, document.fonts && document.fonts.ready ? document.fonts.ready.catch(function () {}) : 0])
+      .then(reveal, reveal);
 
     /* Name label: rest the mouse on a logo for a moment (or tap it on a phone)
        and its name surfaces in a small pill underneath. It follows the logo while the banner
