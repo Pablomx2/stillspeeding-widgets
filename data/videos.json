@@ -17,17 +17,17 @@
       "wiki": "Nicole Kidman"
     },
     {
-      "video": "https://www.youtube.com/watch?v=sNP9wi4br0M",
-      "title": "Amex Platinum Presents: \"There’s Nothing Like It\" with Olivia Rodrigo",
-      "meta": "Commercial",
-      "thumbnail": "covers/yt-sNP9wi4br0M.jpg"
-    },
-    {
       "video": "https://www.instagram.com/p/DdCELxiBsVE/",
       "title": "Google x First Times with Mika Abdalla",
       "meta": "Commercial",
       "thumbnail": "covers/ig-DdCELxiBsVE.jpg",
       "wiki": "Google|Mika Abdalla"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=sNP9wi4br0M",
+      "title": "Amex Platinum Presents: \"There’s Nothing Like It\" with Olivia Rodrigo",
+      "meta": "Commercial",
+      "thumbnail": "covers/yt-sNP9wi4br0M.jpg"
     },
     {
       "video": "https://www.youtube.com/watch?v=-gm2ncZDJPU",
@@ -56,6 +56,12 @@
       "meta": "Behind the scenes",
       "thumbnail": "covers/yt-I-rOF9se14w.jpg",
       "wiki": "Lisa (rapper)"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=UJmq0QWTt_8",
+      "title": "Cara Delevingne | Playboy Summer 2026",
+      "meta": "Editorial",
+      "thumbnail": "covers/yt-UJmq0QWTt_8.jpg"
     },
     {
       "video": "https://www.youtube.com/watch?v=qTm4W_VRs3Q",
