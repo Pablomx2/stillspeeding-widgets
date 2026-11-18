@@ -10,6 +10,12 @@
   },
   "videos": [
     {
+      "video": "https://www.youtube.com/watch?v=_AY5krZErfg",
+      "title": "Kai Cenat - GTA 6 | Official Trailer",
+      "meta": "Youtube Content",
+      "thumbnail": "covers/yt-_AY5krZErfg.jpg"
+    },
+    {
       "video": "https://www.instagram.com/p/DfY8VdnPFLe/",
       "title": "Ghost Soldier",
       "meta": "EPK Content",
@@ -17,23 +23,17 @@
       "coverPos": "50.0% 42.9%"
     },
     {
-      "video": "https://www.instagram.com/p/DfsAsK9gE6I/",
-      "title": "\"You Never Came\" - Alex Warren Promo",
-      "meta": "Commercial",
-      "thumbnail": "covers/ig-DfsAsK9gE6I.jpg"
-    },
-    {
-      "video": "https://www.youtube.com/watch?v=_AY5krZErfg",
-      "title": "Kai Cenat - GTA 6 | Official Trailer",
-      "meta": "Youtube Content",
-      "thumbnail": "covers/yt-_AY5krZErfg.jpg"
-    },
-    {
       "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
       "title": "ADELA - Nicole Kidman",
       "meta": "Music Video",
       "thumbnail": "covers/yt-3sB4Iv_tM7U.jpg",
       "wiki": "Nicole Kidman"
+    },
+    {
+      "video": "https://www.instagram.com/p/DfsAsK9gE6I/",
+      "title": "\"You Never Came\" - Alex Warren Promo",
+      "meta": "Commercial",
+      "thumbnail": "covers/ig-DfsAsK9gE6I.jpg"
     },
     {
       "video": "https://www.instagram.com/p/DdCELxiBsVE/",
