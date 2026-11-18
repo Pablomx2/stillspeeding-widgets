@@ -10,6 +10,18 @@
   },
   "videos": [
     {
+      "video": "https://www.youtube.com/watch?v=HBURqwzzPd4",
+      "title": "Ali G Vs Logan Paul (Unfiltered Interview)",
+      "meta": "Podcast",
+      "thumbnail": "covers/yt-HBURqwzzPd4.jpg"
+    },
+    {
+      "video": "https://www.youtube.com/watch?v=_AY5krZErfg",
+      "title": " GTA 6 | Official Trailer - Kai Cenat",
+      "meta": "Youtube Content",
+      "thumbnail": "covers/yt-_AY5krZErfg.jpg"
+    },
+    {
       "video": "https://www.youtube.com/watch?v=3sB4Iv_tM7U",
       "title": "ADELA - Nicole Kidman",
       "meta": "Music Video",
