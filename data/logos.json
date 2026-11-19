@@ -20,6 +20,15 @@
   },
   "logos": [
     {
+      "name": "Warner Bros. Entertainment",
+      "src": "logos/warner-bros-entertainment-sm2zv.svg",
+      "ink": 0.53,
+      "cy": 0.426,
+      "el": 0.21,
+      "er": 0.17,
+      "t": 1
+    },
+    {
       "name": "Sony Pictures",
       "src": "logos/sony-pictures-skeak.svg",
       "ink": 0.29,
