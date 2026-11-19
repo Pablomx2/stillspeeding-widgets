@@ -20,6 +20,15 @@
   },
   "logos": [
     {
+      "name": "Sony Pictures",
+      "src": "logos/sony-pictures-skeak.svg",
+      "ink": 0.29,
+      "cy": 0.479,
+      "el": 0.7,
+      "er": 1.19,
+      "t": 1
+    },
+    {
       "name": "Playboy",
       "src": "logos/playboy-dc4nj.svg",
       "ink": 0.57,
