@@ -1,0 +1,29 @@
+{
+  "rid": "pageimages-mwmslttb-ny96h",
+  "kind": "page-images",
+  "url": "https://www.warnerbros.com/",
+  "ok": true,
+  "at": 1795046968038,
+  "images": [
+    {
+      "svgText": "<svg focusable=\"false\" viewBox=\"0 0 20 21\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M9.767 16.427l-5.26 2.765a.5.5 0 01-.725-.527l1.005-5.857a.5.5 0 00-.144-.442L.388 8.218a.5.5 0 01.277-.853l5.88-.854a.5.5 0 00.377-.274L9.552.908a.5.5 0 01.896 0l2.63 5.329a.5.5 0 00.377.274l5.88.854a.5.5 0 01.277.853l-4.255 4.148a.5.5 0 00-.144.442l1.005 5.857a.5.5 0 01-.726.527l-5.26-2.765a.5.5 0 00-.465 0zm0-2.718a.5.5 0 01.466 0l2.065 1.086a.5.5 0 00.725-.527l-.394-2.3a.5.5 0 01.144-.442l1.67-1.629a.5.5 0 00-.277-.853l-2.309-.335a.5.5 0 01-.376-.274l-1.033-2.092a.5.5 0 00-.896 0L8.519 8.435a.5.5 0 01-.376.274l-2.31.335a.5.5 0 00-.276.853l1.67 1.629a.5.5 0 01.144.442l-.394 2.3a.5.5 0 00.725.527l2.065-1.086z\"></path><path d=\"M15.475 3.674l1.493-1.624-1.493 1.624zm2.187 9.913l2.056 1.306-2.056-1.306zm-15.265.38L.273 15.02l2.124-1.055zm7.61 5.055l-.01 1.362.01-1.362zm-5.81-15.3l-1.732-1.59 1.731 1.59z\" stroke=\"currentColor\" stroke-linecap=\"round\"></path></svg>",
+      "kind": "logo",
+      "alt": ""
+    },
+    {
+      "url": "https://www.warnerbros.com/assets/images/home/wb/logo.png",
+      "kind": "logo",
+      "alt": "Logo"
+    },
+    {
+      "url": "https://www.warnerbros.com/assets/logo.png",
+      "kind": "image",
+      "alt": ""
+    },
+    {
+      "url": "https://www.warnerbros.com/assets/apple-touch-icon.png",
+      "kind": "icon",
+      "alt": ""
+    }
+  ]
+}
