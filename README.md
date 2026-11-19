@@ -22,7 +22,10 @@ Video carousel + clients logo banner for stillspeeding.net (Squarespace).
 Per-block options: `data-theme="dark"` (black sections), `data-style="mono"` (logos only),
 `data-heading="Select clients"` (logos only), `data-per-view="2"` (videos only).
 
-Changes published from the admin go live about a minute later (GitHub Pages rebuild).
+Changes published from the admin go live about a minute later. Each Publish is a single commit, and the
+Deploy site workflow (`.github/workflows/deploy.yml`, Pages source: GitHub Actions) publishes it: a newer deploy
+replaces an older or stuck one, a hung deploy gives up after 3 minutes and retries once, and the admin's status
+pill shows "Going live…" until the site serves the new lists. The other workflows start Deploy site after they push.
 
 Covers get small WebP copies in `covers/sizes/` automatically (Cover sizes workflow, `scripts/cover-sizes.mjs`);
 the carousel picks the size that fits the screen. Logos are saved already cropped (`"t": 1` in `data/logos.json`),

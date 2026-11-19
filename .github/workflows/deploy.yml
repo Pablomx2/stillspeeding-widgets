@@ -1,0 +1,58 @@
+name: Deploy site
+
+# Publishes the repo to GitHub Pages (Settings → Pages → Source: GitHub Actions). Replaces
+# GitHub's built-in "pages build and deployment" so that:
+#  - a newer deploy cancels an older or stuck one instead of queuing behind it,
+#  - a hung deploy gives up after 3 minutes and retries once on its own,
+#  - pushes that don't change what the site serves don't deploy at all.
+# Pushes made by the other workflows can't trigger this one, so they start it themselves
+# (gh workflow run deploy.yml).
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["requests/**", "data/video-orders.json", "scripts/**", "README.md"]
+  workflow_dispatch:
+    inputs:
+      retry:
+        description: "Set by the automatic retry — leave empty"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 120000
+
+  # one automatic retry if the deploy failed or hung (not when a newer deploy replaced it)
+  retry:
+    needs: deploy
+    if: ${{ !cancelled() && needs.deploy.result != 'success' && inputs.retry != 'yes' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml -R "${{ github.repository }}" --ref main -f retry=yes

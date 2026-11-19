@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: write
-  pages: write
+  actions: write
 
 concurrency:
   group: cover-sizes
@@ -18,6 +18,9 @@ concurrency:
 
 jobs:
   sizes:
+    # when the same push also changed the video list, the Video covers workflow makes the sizes
+    # (and deploys once) — skip here so the two don't race each other
+    if: ${{ github.event_name != 'push' || !contains(toJSON(github.event.commits), '"data/videos.json"') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,5 +39,5 @@ jobs:
           git commit -m "Add cover sizes"
           git pull --rebase origin main
           git push
-          # pushes made by Actions don't redeploy the site on their own
-          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || true
+          # pushes made by Actions don't start other workflows — start the site deploy
+          gh workflow run deploy.yml -R "${{ github.repository }}" --ref main || true

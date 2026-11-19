@@ -36,6 +36,7 @@
   .status i { width: 8px; height: 8px; border-radius: 50%; background: #666; display: inline-block; }
   .status.dirty i { background: #f5c542; }
   .status.saved i { background: #3ecf6e; }
+  .status.deploying i { background: #5aa9f5; animation: breathe 1.4s ease-in-out infinite; }
 
   /* ---------- buttons ---------- */
   .btn { -webkit-appearance: none; appearance: none; border: 1.5px solid currentColor; background: transparent; height: 42px; padding: 0 20px; border-radius: 300px; font-family: var(--head); font-size: 15px; line-height: 1; text-transform: uppercase; letter-spacing: .03em; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; transition: background .2s, color .2s, opacity .2s, transform .15s; }
@@ -837,6 +838,34 @@
       throw e;
     });
   }
+  /* Save several files as ONE commit (Git Data API), so GitHub Pages deploys once per Publish
+     instead of once per file. If the branch moved on meanwhile (e.g. a cover Action pushed),
+     rebuild on top of it and try again — last write wins, as with putFile. Resolves to
+     { path: new file sha }. */
+  function commitFiles(files, message) {
+    var blobs = {};
+    return Promise.all(files.map(function (f) {
+      return api("/git/blobs", { method: "POST", body: { content: f.base64, encoding: "base64" } }).then(function (b) { blobs[f.path] = b.sha; });
+    })).then(function () {
+      var tree = files.map(function (f) { return { path: f.path, mode: "100644", type: "blob", sha: blobs[f.path] }; });
+      function attempt(n) {
+        return api("/git/ref/heads/" + BRANCH).then(function (ref) {
+          var parent = ref.object.sha;
+          return api("/git/commits/" + parent).then(function (c) {
+            return api("/git/trees", { method: "POST", body: { base_tree: c.tree.sha, tree: tree } });
+          }).then(function (t) {
+            return api("/git/commits", { method: "POST", body: { message: message, tree: t.sha, parents: [parent] } });
+          }).then(function (c) {
+            return api("/git/refs/heads/" + BRANCH, { method: "PATCH", body: { sha: c.sha, force: false } });
+          });
+        }).catch(function (e) {
+          if ((e.status === 409 || e.status === 422) && n < 4) return attempt(n + 1);
+          throw e;
+        });
+      }
+      return attempt(0);
+    }).then(function () { return blobs; });
+  }
 
   /* ---------------- loading ---------------- */
   var FALLBACK = {
@@ -892,9 +921,18 @@
   function refreshStatus() {
     var dirty = isDirty("videos") || isDirty("logos") || pendingUploads().length > 0;
     var s = $("#status");
+    var going = !dirty && (deployState === "deploying" || deployState === "slow");
     s.classList.toggle("dirty", dirty);
-    s.classList.toggle("saved", !dirty);
-    $("#statusText").textContent = dirty ? "Unpublished changes" : "Up to date";
+    s.classList.toggle("deploying", going);
+    s.classList.toggle("saved", !dirty && !going);
+    $("#statusText").textContent = dirty ? "Unpublished changes"
+      : deployState === "deploying" ? "Going live…"
+      : deployState === "slow" ? "Still going live…"
+      : deployState === "live" ? "Live on your site ✓"
+      : "Up to date";
+    s.title = !dirty && deployState === "slow"
+      ? "GitHub is taking longer than usual to update the site. It retries on its own — no need to publish again."
+      : "";
     $("#publishBtn").disabled = !dirty || publishing;
     function countText(list) {
       var hid = list.filter(function (x) { return x.hidden; }).length;
@@ -914,25 +952,29 @@
     btn.disabled = true;
     btn.innerHTML = '<i class="spin"></i><span>Publishing</span>';
 
+    // everything goes up as one commit → one site deploy
     var uploads = pendingUploads();
-    var chain = Promise.resolve();
-    uploads.forEach(function (u) {
-      chain = chain.then(function () {
-        return putFile(u.path, u.item.pending, "Add " + u.label).then(function () { delete u.item.pending; });
-      });
+    var files = uploads.map(function (u) { return { path: u.path, base64: u.item.pending }; });
+    var kinds = ["videos", "logos"].filter(function (k) { return isDirty(k); });
+    var jsons = {};
+    kinds.forEach(function (kind) {
+      jsons[kind] = serialize(kind);
+      files.push({ path: "data/" + kind + ".json", base64: b64encodeText(jsons[kind]) });
     });
-    ["videos", "logos"].forEach(function (kind) {
-      chain = chain.then(function () {
-        if (!isDirty(kind)) return;
-        var json = serialize(kind);
-        return putFile("data/" + kind + ".json", b64encodeText(json), "Update " + kind, remote[kind].sha).then(function (res) {
-          remote[kind].sha = res.content && res.content.sha;
-          remote[kind].json = json;
-        });
+    var parts = kinds.map(function (k) { return "Update " + k; });
+    if (uploads.length) parts.push(uploads.length === 1 ? "add " + uploads[0].label : "add " + uploads.length + " pictures");
+    var message = parts.join(", ").replace(/^a/, "A");
+
+    (files.length ? commitFiles(files, message) : Promise.resolve({})).then(function (shas) {
+      uploads.forEach(function (u) { delete u.item.pending; });
+      kinds.forEach(function (kind) {
+        remote[kind].sha = shas["data/" + kind + ".json"];
+        remote[kind].json = jsons[kind];
       });
-    });
-    chain.then(function () {
-      toast("Published! Your site will show the changes in about a minute.");
+      if (files.length) {
+        toast("Published! Going live on your site…");
+        watchLive(jsons, uploads.map(function (u) { return u.path; }));
+      }
       watchForCovers();
       renderOrders();
     }).catch(function (e) {
@@ -946,6 +988,49 @@
       btn.innerHTML = "<span>Publish</span>";
       refreshStatus();
     });
+  }
+
+  /* After Publish, check the live site (this app is served from it) every few seconds until it
+     serves what was just published, and show that in the status pill. The cover Action may add
+     "thumbnail" fields before the deploy lands, so those are ignored when comparing. */
+  var deployState = null, liveWatch = null, liveDone = null, liveRun = 0;
+  function setDeploy(s) { deployState = s; refreshStatus(); }
+  function sameList(a, b) {
+    function norm(t) {
+      var d = JSON.parse(t);
+      ["videos", "logos"].forEach(function (k) { (d[k] || []).forEach(function (x) { delete x.thumbnail; }); });
+      return JSON.stringify(d);
+    }
+    try { return norm(a) === norm(b); } catch (e) { return false; }
+  }
+  function watchLive(jsons, paths) {
+    clearTimeout(liveWatch); clearTimeout(liveDone);
+    var run = ++liveRun, started = Date.now();
+    setDeploy("deploying");
+    function bust(p) { return p + (p.indexOf("?") < 0 ? "?" : "&") + "live=" + Date.now(); }
+    (function check() {
+      liveWatch = setTimeout(function () {
+        var checks = Object.keys(jsons).map(function (kind) {
+          return fetch(bust("data/" + kind + ".json"), { cache: "no-store" })
+            .then(function (r) { return r.ok ? r.text() : ""; })
+            .then(function (t) { return sameList(t, jsons[kind]); });
+        }).concat(paths.map(function (p) {
+          return fetch(bust(p), { method: "HEAD", cache: "no-store" }).then(function (r) { return r.ok; });
+        }));
+        Promise.all(checks).then(function (ok) { return ok.every(Boolean); }, function () { return false; }).then(function (live) {
+          if (run !== liveRun) return;
+          if (live) {
+            setDeploy("live");
+            toast("Live on your site ✓");
+            liveDone = setTimeout(function () { if (run === liveRun) setDeploy(null); }, 8000);
+            return;
+          }
+          var waited = Date.now() - started;
+          if (waited > 150000 && deployState !== "slow") setDeploy("slow");
+          if (waited < 12 * 60000) check(); else setDeploy(null);
+        });
+      }, 5000);
+    })();
   }
 
   /* After publishing, GitHub fetches the best cover (yt-dlp) for YouTube, Vimeo and Instagram

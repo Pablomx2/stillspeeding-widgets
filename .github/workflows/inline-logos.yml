@@ -11,7 +11,7 @@ on:
 
 permissions:
   contents: write
-  pages: write
+  actions: write
 
 concurrency:
   group: inline-logos
@@ -39,5 +39,5 @@ jobs:
           git commit -m "Inline logo list"
           git pull --rebase origin main
           git push
-          # pushes made by Actions don't redeploy the site on their own
-          gh api -X POST "repos/${{ github.repository }}/pages/builds" --silent || true
+          # pushes made by Actions don't start other workflows — start the site deploy
+          gh workflow run deploy.yml -R "${{ github.repository }}" --ref main || true
